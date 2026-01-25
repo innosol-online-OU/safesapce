@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# AI Agent (LOCAL ONLY)
+.agent/
+skills/
+
+# Documentation (HIDDEN - Internal)
+docs/
+
+# Model Caches (LARGE FILES)
+hf_cache/
+insightface_cache/
+pip_cache/
+models/
+*.pt
+*.onnx
+!yolov8n-seg.pt
+
+# Research Outputs (Notebooks generate these)
+*.ipynb_checkpoints/
+checkpoints/
+runs/
+tensorboard/
+
+# Test/Debug Files
+test_*.png
+debug_*.png
+dummy_*.png
+output_*.png
+verify_*.png
+protected_*.png
+heatmap_*.png
+target_*.png
+*.jpg
+
+# Uploads/Outputs
+uploads/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Deployment Scripts (env-specific)
+*.bat
+*.sh
+
+# Draft files (temporary)
+*_DRAFT.md
+runner_data/

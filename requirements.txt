@@ -1,0 +1,29 @@
+gradio
+streamlit==1.40.0
+streamlit-drawable-canvas
+numpy
+Pillow
+# torch/torchvision installed separately in Dockerfile for caching
+
+# Core Logic
+timm
+transformers
+scikit-image
+opencv-python-headless
+mediapipe
+
+# Project Invisible (Latent Defense)
+diffusers
+accelerate
+invisible-watermark
+insightface
+lpips
+deepface
+tf-keras
+onnxruntime-gpu
+bitsandbytes
+qwen_vl_utils
+
+# Phase 2: Frontier Protection
+PyWavelets  # For DWT-Mamba wavelet-domain optimization
+ultralytics # For Chimera Mask (YOLO Seg)
