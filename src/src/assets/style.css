@@ -1,0 +1,296 @@
+/* ==========================================================================
+   PROJECT INVISIBLE - UI THEME: FROSTED OBSIDIAN (GROK PROTOCOL)
+   ========================================================================== */
+
+/* 1. THEME VARIABLES (EASY CONFIG) */
+:root {
+    /* Colors */
+    --bg-deep: #050A14;
+    --bg-glass: rgba(15, 23, 42, 0.75);
+    /* Increased opacity for contrast */
+    --border-glass: rgba(255, 255, 255, 0.15);
+
+    /* Neon Accents (Boosted for High Contrast) */
+    --neon-primary: #00FFFF;
+    /* Hyper Cyan */
+    --neon-secondary: #B026FF;
+    /* Neon Purple */
+    --neon-alert: #FF003C;
+    /* Cyber Red */
+
+    /* Typography */
+    --font-heading: 'Orbitron', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Text */
+    --text-primary: #F8FAFC;
+    --text-muted: #94A3B8;
+}
+
+/* 2. TYPOGRAPHY IMPORTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700;900&display=swap');
+
+/* Sidebar specific overrides */
+[data-testid="stSidebar"],
+section[data-testid="stSidebar"]>div {
+    background-color: #02040a !important;
+    /* Darker than main bg for contrast */
+    border-right: 1px solid var(--border-glass) !important;
+}
+
+/* Force text colors in sidebar */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {
+    color: #cbd5e1 !important;
+    text-shadow: none !important;
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2 {
+    color: var(--neon-secondary) !important;
+    font-size: 1.1rem !important;
+    margin-top: 1rem !important;
+}
+
+/* Sidebar Inputs */
+[data-testid="stSidebar"] div[data-baseweb="select"]>div,
+[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+    border: 1px solid #334155 !important;
+}
+
+.stApp {
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+}
+
+/* Shooting Stars Animation Layer */
+.stApp::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(2px 2px at 20px 30px, #eee, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 130px 80px, #fff, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0, 0, 0, 0));
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    opacity: 0.3;
+    animation: stars-move 100s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Shooting Star Overlay */
+.stApp::after {
+    content: "";
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: transparent;
+    box-shadow:
+        inset 0 0 0 0 rgba(0, 0, 0, 0);
+    /* This pseudo-element is reserved for JS-injected shooting stars or pure CSS glow */
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes stars-move {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(-1000px);
+    }
+}
+
+/* 4. TYPOGRAPHY OVERRIDES */
+h1,
+h2,
+h3,
+.metric-value {
+    font-family: var(--font-heading);
+    letter-spacing: 2px;
+    /* Grok-style wide spacing */
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+code,
+.terminal-text {
+    font-family: var(--font-mono);
+}
+
+/* 5. UI COMPONENTS: FROSTED OBSIDIAN CARDS */
+.glass-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-glass);
+    border-radius: 4px;
+    /* Sharper corners for pro feel */
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+/* 6. NEON INPUTS & BUTTONS */
+/* Inputs */
+div[data-baseweb="input"] {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid #334155 !important;
+    border-radius: 4px !important;
+}
+
+div[data-baseweb="input"]:focus-within {
+    border-color: var(--neon-primary) !important;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2) !important;
+}
+
+/* Primary Button */
+.stButton>button {
+    background: transparent !important;
+    border: 1px solid var(--neon-primary) !important;
+    color: var(--neon-primary) !important;
+    font-family: var(--font-body) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-radius: 2px !important;
+    /* Cyber sharp */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.stButton>button:hover {
+    background: var(--neon-primary) !important;
+    color: #000 !important;
+    /* Invert for high contrast */
+    box-shadow: 0 0 25px var(--neon-primary);
+    transform: translateY(-1px);
+}
+
+/* Secondary Button (Red/Alert) */
+div[data-testid="stButton"]>button[kind="secondary"] {
+    border-color: var(--neon-alert) !important;
+    color: var(--neon-alert) !important;
+}
+
+div[data-testid="stButton"]>button[kind="secondary"]:hover {
+    background: var(--neon-alert) !important;
+    color: #fff !important;
+    box-shadow: 0 0 20px var(--neon-alert);
+}
+
+/* 7. CUSTOM LAYOUT ELEMENTS */
+/* Header Status Dot */
+.status-dot {
+    height: 10px;
+    width: 10px;
+    background-color: #00FF88;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 10px #00FF88;
+    animation: signal-pulse 2s infinite;
+    margin-right: 12px;
+}
+
+@keyframes signal-pulse {
+    0% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+    }
+
+    70% {
+        opacity: 1;
+        box-shadow: 0 0 0 8px rgba(0, 255, 136, 0);
+    }
+
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+    }
+}
+
+/* Terminal Window */
+.terminal-container {
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid #333;
+    border-left: 3px solid var(--neon-secondary);
+    border-radius: 4px;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    height: 220px;
+    overflow-y: auto;
+}
+
+/* Metrics Grid */
+.metric-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-box::before {
+    content: "";
+    /* Scanline effect */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    color: var(--neon-primary);
+    font-weight: 700;
+}
+
+/* Hide Streamlit Bloat */
+header {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+.stDeployButton {
+    display: none;
+}

@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip_cache/
+hf_cache/
+insightface_cache/
+uploads/
+.git/
+.vscode/
+.idea/
