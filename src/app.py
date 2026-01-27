@@ -133,22 +133,65 @@ with st.sidebar:
     with st.sidebar.expander("🛠️ Advanced Operations", expanded=False):
         st.markdown("### 🚀 Frontier Protocol")
         
+        # --- Liquid Warp V2 Controls ---
+        # This toggle will override the target_profile_val for Liquid Warp V2 if enabled
+        is_liquid_v2_toggle = st.toggle("Enable Liquid Warp V2 (Phase 17.9)", value=False, help="Use advanced anchored warping (Phase 17.9)")
+        
+        liquid_grid_size = 12 # Default (Phase 17.9d)
+        liquid_asymmetry = 0.10 # Default
+        
+        if is_liquid_v2_toggle:
+            st.markdown("### 💧 Liquid V2 Settings")
+            liquid_grid_size = st.select_slider(
+                "Grid Resolution",
+                options=[12, 14, 16, 24, 32, 48, 64],
+                value=12,
+                help="Lower = smoother warps (12 recommended). Higher = finer distortions."
+            )
+            
+            liquid_asymmetry = st.slider(
+                "Asymmetry Intensity", 
+                min_value=0.0, 
+                max_value=0.3, 
+                value=0.10, 
+                step=0.01,
+                help="Controls the strength of the 'Picasso' skew effect."
+            )
+
         # Target Profile
         target_profile_options = {
+            "Ghost-Mesh (Phase 18)": "ghost_mesh",
+            "Liquid Warp V2 (Phase 17.9)": "liquid_17_v2",
             "Liquid Warp (Phase 17)": "liquid_17",
             "Resonant Ghost (Phase 16)": "phantom_15",
             "Frontier Lite (Anti-Grok)": "frontier",
             "General (SD/Midjourney)": "general"
         }
-        selected_profile_label = st.selectbox(
-            "Target Profile",
-            options=list(target_profile_options.keys()),
-            help="Liquid Warp: Geometric warping (invisible). Resonant Ghost: Pixel perturbation."
-        )
+        
+        # If Liquid Warp V2 toggle is on, force the selection
+        if is_liquid_v2_toggle:
+            selected_profile_label = "Liquid Warp V2 (Phase 17.9)"
+            st.selectbox(
+                "Target Profile",
+                options=list(target_profile_options.keys()),
+                index=list(target_profile_options.keys()).index(selected_profile_label),
+                help="Liquid Warp V2: Anchored T-zone warp. Liquid Warp: Geometric warping. Resonant Ghost: Pixel perturbation.",
+                disabled=True # Disable selection as it's forced by toggle
+            )
+        else:
+            selected_profile_label = st.selectbox(
+                "Target Profile",
+                options=list(target_profile_options.keys()),
+                help="Liquid Warp V2: Anchored T-zone warp. Liquid Warp: Geometric warping. Resonant Ghost: Pixel perturbation."
+            )
+
         target_profile_val = target_profile_options[selected_profile_label]
         is_frontier = (target_profile_val == "frontier")
         is_phantom = (target_profile_val == "phantom_15")
         is_liquid = (target_profile_val == "liquid_17")
+        # Determine is_liquid_v2 based on the toggle, otherwise from target_profile_val
+        is_liquid_v2 = is_liquid_v2_toggle or (target_profile_val == "liquid_17_v2")
+        is_ghost_mesh = (target_profile_val == "ghost_mesh")
         
         # Phase 15.3: Resource Management
         if st.button("♻️ Flush VRAM (Release Memory)", help="Unload heavy AI models to free up GPU memory."):
@@ -256,6 +299,157 @@ with st.sidebar:
             p_targeting = 1.0 # Default face focus
             p_background = 0.0 
             p_resolution = "Original"
+        elif is_liquid_v2:
+            st.info("🌊 **Phase 17.9 (Liquid Warp V2)**\n\nT-Zone Anchoring: Warps internal features while preserving silhouette.")
+            
+            with st.expander("🌊 Liquid Warp V2 Controls", expanded=True):
+                # 1. Intensity (Strength)
+                p_strength = st.slider(
+                    "Warp Intensity", 
+                    min_value=1, max_value=100, 
+                    value=st.session_state.get('phantom_strength', 75), 
+                    help="Higher = Stronger identity disruption."
+                )
+                
+                # 2. Grid Resolution (now uses the `liquid_grid_size` from the toggle section)
+                # This is already set by the toggle section, just display info or re-use
+                st.caption(f"Warp Frequency (Grid): {liquid_grid_size}x{liquid_grid_size}")
+                
+                # 3. Optimization Steps
+                optimization_steps = st.slider(
+                    "Warp Cycles",
+                    min_value=50, max_value=300, value=100, step=25,
+                    help="More cycles = deeper identity erasure."
+                )
+                
+                # 4. Mask Softness (Blur Kernel)
+                mask_blur = st.slider(
+                    "Mask Softness",
+                    min_value=1, max_value=31, value=15, step=2,
+                    help="Higher = Smoother T-zone transition."
+                )
+                
+                # 5. Total Runs (Best of N)
+                num_runs = st.slider(
+                    "Total Runs (Best of N)",
+                    min_value=1, max_value=5, value=1,
+                    help="Run multiple times with different random skews and pick best result. 1 = Single run."
+                )
+                
+                # Asymmetry Intensity (now uses the `liquid_asymmetry` from the toggle section)
+                st.caption(f"Asymmetry Intensity: {liquid_asymmetry:.2f}")
+                
+                st.caption("⚙️ V2b Defaults: TV=0.01, FlowLimit=0.03")
+                
+                # Save to session state
+                st.session_state['phantom_strength'] = p_strength
+                st.session_state['liquid_grid'] = liquid_grid_size # Use the value from the toggle section
+                st.session_state['liquid_tv'] = 0.01  # Fixed for V2
+                st.session_state['liquid_steps'] = optimization_steps
+                st.session_state['liquid_limit'] = 0.03  # Fixed for V2
+                st.session_state['liquid_blur'] = mask_blur
+                st.session_state['phantom_retries'] = num_runs  # Use retries var for runs
+                st.session_state['liquid_asymmetry'] = liquid_asymmetry # Save asymmetry
+            
+            ensemble_diversity = 1
+            use_dwt_mamba = False
+            use_neural_stego = False
+            hidden_command = ""
+            anti_heal_intensity = 0.0
+            max_retries_ui = num_runs # Correctly pass Total Runs
+            p_targeting = 1.0
+            p_background = 0.0
+            p_resolution = "Original"
+            p_retries = 1
+            flow_limit = 0.03
+            p_tv_weight = 0.01
+        elif is_ghost_mesh:
+            st.info("👻🕸️ **Phase 18 (Ghost-Mesh)**\n\nCoupled Warp + Noise Optimization with Hinge-Loss Constraints.")
+            
+            with st.expander("👻🕸️ Ghost-Mesh Controls", expanded=True):
+                # 1. Attack Intensity (Strength)
+                p_strength = st.slider(
+                    "Attack Intensity", 
+                    min_value=1, max_value=100, 
+                    value=st.session_state.get('phantom_strength', 75), 
+                    help="Higher = Stronger identity disruption."
+                )
+                
+                # 2. Warp/Noise Balance
+                gm_balance = st.slider(
+                    "Warp/Noise Balance",
+                    min_value=0.0, max_value=1.0, value=0.5, step=0.1,
+                    help="0.0 = Warp-heavy (geometric). 1.0 = Noise-heavy (pixel)."
+                )
+                
+                # 3. Grid Resolution
+                gm_grid_size = st.select_slider(
+                    "Grid Resolution",
+                    options=[12, 16, 24, 32],
+                    value=12,
+                    help="Low (12) = global shifts. High (32) = local distortion."
+                )
+                
+                # 4. T-Zone Anchoring
+                gm_anchoring = st.slider(
+                    "T-Zone Anchoring",
+                    min_value=0.0, max_value=1.0, value=0.8, step=0.1,
+                    help="1.0 = Freeze silhouette/jawline. 0.0 = Full warp everywhere."
+                )
+                
+                # 5. Grain Control (TV Weight)
+                gm_tv = st.slider(
+                    "Grain Control (TV)",
+                    min_value=1, max_value=100, value=50,
+                    help="Higher = Smoother noise. Lower = More grain."
+                )
+                
+                # 6. Ghost Masking (JND)
+                gm_jnd = st.checkbox(
+                    "Ghost Masking (JND)", 
+                    value=True,
+                    help="Apply texture-only noise (invisible in smooth areas)."
+                )
+                
+                # 7. Optimization Steps
+                optimization_steps = st.slider(
+                    "Optimization Cycles",
+                    min_value=30, max_value=120, value=60, step=10,
+                    help="More cycles = deeper identity erasure."
+                )
+                
+                # 8. Visualize Mesh Distortion (optional)
+                st.divider()
+                gm_show_mesh = st.toggle(
+                    "Visualize Mesh Distortion", 
+                    value=False, 
+                    help="Show the geometric warp grid instead of difference heatmap."
+                )
+                st.session_state['gm_show_mesh'] = gm_show_mesh
+                
+                # Save to session state
+                st.session_state['phantom_strength'] = p_strength
+                st.session_state['ghost_mesh_grid'] = gm_grid_size
+                st.session_state['ghost_mesh_balance'] = gm_balance
+                st.session_state['ghost_mesh_anchoring'] = gm_anchoring
+                st.session_state['ghost_mesh_tv'] = gm_tv
+                st.session_state['ghost_mesh_jnd'] = gm_jnd
+                st.session_state['liquid_steps'] = optimization_steps
+            
+            ensemble_diversity = 1
+            use_dwt_mamba = False
+            use_neural_stego = False
+            hidden_command = ""
+            anti_heal_intensity = 0.0
+            max_retries_ui = st.session_state.get('phantom_retries', 3)
+            p_targeting = 1.0
+            p_background = 0.0
+            p_resolution = "Original"
+            p_retries = 1
+            flow_limit = 0.03
+            p_tv_weight = 0.01
+            liquid_grid_size = gm_grid_size
+            liquid_asymmetry = 0.10
         elif is_phantom:
             st.info("👻 **Resonant Ghost (Phase 16)**\n\nSigLIP + MI-FGSM. Pixel perturbation attack.")
             
@@ -555,7 +749,11 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                     use_neural_stego=use_neural_stego,
                     hidden_command=hidden_command,
                     max_retries=max_retries_ui,
-                    background_intensity=p_background if is_phantom else 1.0
+                    background_intensity=p_background if is_phantom else 1.0,
+                    # Phase 17.9c: Granular Control
+                    is_liquid_v2=is_liquid_v2,
+                    liquid_grid_size=liquid_grid_size,
+                    liquid_asymmetry=liquid_asymmetry
                 )
                 
                 if success:
@@ -572,6 +770,7 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                             <span style="color: #94a3b8;">[INFO]</span> Optimization Steps: {actual_steps}<br>
                             <span style="color: #94a3b8;">[INFO]</span> DWT-Mamba Loss: {actual_dwt}<br>
                             <span style="color: #94a3b8;">[INFO]</span> Neural Payload: {hidden_command if use_neural_stego else 'NONE'}<br>
+                            <span style="color: #94a3b8;">[INFO]</span> Trust Badge: <span style="color: #4ade80;">INJECTED (Invisible)</span><br>
                             <span style="color: #facc15;">[WARN]</span> Bio-Signature Scrambled.<br>
                             <span style="color: #4ade80;">[SYSTEM]</span> Output generated at {output_path}
                         </div>
@@ -601,6 +800,204 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
+                        
+                        # Qwen Analysis Display
+                        qwen_passed = metrics.get('qwen_passed', None)
+                        if qwen_passed is not None:
+                            q_color = "#4ade80" if qwen_passed else "#ef4444"
+                            q_icon = "✅" if qwen_passed else "❌"
+                            q_score = metrics.get('qwen_score', 0.0) * 100
+                            st.markdown(f"""
+                            <div style="background-color: #1e1e24; border: 1px solid {q_color}; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                <h4 style="color: {q_color}; margin: 0;">{q_icon} Qwen-VL Analysis</h4>
+                                <p style="color: #a0a0a0; font-size: 0.9em; margin: 5px 0;">
+                                    <strong>Match Score:</strong> {q_score:.1f}%<br>
+                                    <strong>Verdict:</strong> {metrics.get('qwen_reason', 'Analysis complete.')}
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # Panic Mode Alert (Phase 18)
+                            if not qwen_passed and is_ghost_mesh:
+                                st.markdown("""
+                                <div style="background-color: #7f1d1d; border: 2px solid #ef4444; border-radius: 8px; padding: 15px; margin-top: 10px; animation: pulse 1.5s infinite;">
+                                    <h4 style="color: #fca5a5; margin: 0;">⚠️ PANIC MODE TRIGGERED</h4>
+                                    <p style="color: #fecaca; font-size: 0.9em; margin: 5px 0;">
+                                        Qwen-VL detected identity match. Retry loop initiated with randomized parameters.
+                                        Consider increasing <strong>Attack Intensity</strong> or adjusting <strong>Warp/Noise Balance</strong>.
+                                    </p>
+                                </div>
+                                <style>
+                                @keyframes pulse {
+                                    0%, 100% { opacity: 1; }
+                                    50% { opacity: 0.7; }
+                                }
+                                </style>
+                                """, unsafe_allow_html=True)
+                        
+                        # Visualization Graphs (Phase 17.9d)
+                        warp_metrics = metrics.get('warp_metrics', None)
+                        if warp_metrics and len(warp_metrics.get('step', [])) > 0:
+                            import matplotlib.pyplot as plt
+                            import matplotlib
+                            matplotlib.use('Agg')  # Non-interactive backend
+                            
+                            st.markdown("### 📊 Optimization Visualization")
+                            
+                            # Create figure with two subplots
+                            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), facecolor='#0e0e12')
+                            
+                            steps = warp_metrics['step']
+                            avg_sim = warp_metrics['avg_sim']
+                            tv_loss = warp_metrics['tv_loss']
+                            disp_max = warp_metrics['disp_max']
+                            
+                            # Graph 1: AI Identity Convergence
+                            ax1.set_facecolor('#0e0e12')
+                            ax1.plot(steps, avg_sim, 'o-', color='#3b82f6', linewidth=2, markersize=4, label='Avg Similarity (AI)')
+                            ax1.axhline(y=0.60, color='#ef4444', linestyle='--', linewidth=1.5, label='Target Breaking Threshold (0.60)')
+                            ax1.set_xlabel('Step', color='white')
+                            ax1.set_ylabel('Similarity Score', color='white')
+                            ax1.set_title('AI Identity Convergence (AvgSim)', color='white', fontsize=12)
+                            ax1.tick_params(colors='white')
+                            ax1.legend(loc='upper right', facecolor='#1e1e24', edgecolor='white', labelcolor='white')
+                            ax1.set_ylim(0.5, 1.05)
+                            ax1.grid(True, alpha=0.3, color='gray')
+                            for spine in ax1.spines.values():
+                                spine.set_color('gray')
+                            
+                            # Graph 2: Warp Dynamics & Penalty
+                            ax2.set_facecolor('#0e0e12')
+                            ax2_twin = ax2.twinx()
+                            
+                            line1, = ax2.plot(steps, tv_loss, 's-', color='#22c55e', linewidth=2, markersize=4, label='TV (Smoothness Penalty)')
+                            line2, = ax2_twin.plot(steps, disp_max, '^-', color='#a855f7', linewidth=2, markersize=4, label='DispMax (Warp Intensity)')
+                            
+                            ax2.set_xlabel('Step', color='white')
+                            ax2.set_ylabel('TV Score', color='#22c55e')
+                            ax2_twin.set_ylabel('Max Displacement', color='#a855f7')
+                            ax2.set_title('Warp Dynamics & Penalty Plateauing', color='white', fontsize=12)
+                            ax2.tick_params(axis='y', colors='#22c55e')
+                            ax2_twin.tick_params(axis='y', colors='#a855f7')
+                            ax2.tick_params(axis='x', colors='white')
+                            ax2.grid(True, alpha=0.3, color='gray')
+                            for spine in ax2.spines.values():
+                                spine.set_color('gray')
+                            for spine in ax2_twin.spines.values():
+                                spine.set_color('gray')
+                            
+                            # Combined legend
+                            lines = [line1, line2]
+                            labels = [l.get_label() for l in lines]
+                            ax2.legend(lines, labels, loc='upper left', facecolor='#1e1e24', edgecolor='white', labelcolor='white')
+                            
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                            plt.close(fig)
+                        
+                        # Visualization Graphs (Phase 18: Ghost-Mesh)
+                        mesh_metrics = metrics.get('mesh_metrics', None)
+                        if mesh_metrics and len(mesh_metrics.get('step', [])) > 0:
+                            import matplotlib.pyplot as plt
+                            import matplotlib
+                            matplotlib.use('Agg')
+                            
+                            st.markdown("### 📊 Ghost-Mesh Optimization Visualization")
+                            
+                            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), facecolor='#0e0e12')
+                            
+                            steps = mesh_metrics['step']
+                            identity_loss = mesh_metrics['identity_loss']
+                            # Updated: Use new lpips_raw and lpips_hinge keys
+                            lpips_raw = mesh_metrics.get('lpips_raw', mesh_metrics.get('lpips_loss', []))
+                            lpips_hinge = mesh_metrics.get('lpips_hinge', [0] * len(steps))
+                            tv_loss = mesh_metrics['tv_loss']
+                            disp_max = mesh_metrics['disp_max']
+                            
+                            # Graph 1: Identity Disruption + LPIPS
+                            ax1.set_facecolor('#0e0e12')
+                            ax1.plot(steps, identity_loss, 'o-', color='#3b82f6', linewidth=2, markersize=4, label='Identity Loss (CosSim)')
+                            ax1.plot(steps, lpips_raw, 's-', color='#f97316', linewidth=2, markersize=4, label='Raw LPIPS (Perceptual)')
+                            ax1.plot(steps, lpips_hinge, '^-', color='#facc15', linewidth=2, markersize=3, alpha=0.7, label='LPIPS Hinge (Optimizer)')
+                            ax1.axhline(y=0.60, color='#ef4444', linestyle='--', linewidth=1.5, label='Identity Breaking Threshold')
+                            ax1.axhline(y=0.05, color='#f97316', linestyle=':', linewidth=1.5, alpha=0.7, label='LPIPS Threshold (τ=0.05)')
+                            ax1.set_xlabel('Step', color='white')
+                            ax1.set_ylabel('Loss Value', color='white')
+                            ax1.set_title('Ghost-Mesh: Identity + Visual Quality', color='white', fontsize=12)
+                            ax1.tick_params(colors='white')
+                            ax1.legend(loc='upper right', facecolor='#1e1e24', edgecolor='white', labelcolor='white', fontsize=8)
+                            ax1.set_ylim(-0.2, 1.1)  # Allow negative identity (anti-correlation)
+                            ax1.grid(True, alpha=0.3, color='gray')
+                            for spine in ax1.spines.values():
+                                spine.set_color('gray')
+                            
+                            # Graph 2: Coupled Dynamics
+                            ax2.set_facecolor('#0e0e12')
+                            ax2_twin = ax2.twinx()
+                            
+                            line1, = ax2.plot(steps, tv_loss, 's-', color='#22c55e', linewidth=2, markersize=4, label='TV (Noise Smoothness)')
+                            line2, = ax2_twin.plot(steps, disp_max, '^-', color='#a855f7', linewidth=2, markersize=4, label='DispMax (Warp Intensity)')
+                            
+                            ax2.set_xlabel('Step', color='white')
+                            ax2.set_ylabel('TV Score', color='#22c55e')
+                            ax2_twin.set_ylabel('Max Displacement', color='#a855f7')
+                            ax2.set_title('Coupled Warp + Noise Dynamics', color='white', fontsize=12)
+                            ax2.tick_params(axis='y', colors='#22c55e')
+                            ax2_twin.tick_params(axis='y', colors='#a855f7')
+                            ax2.tick_params(axis='x', colors='white')
+                            ax2.grid(True, alpha=0.3, color='gray')
+                            for spine in ax2.spines.values():
+                                spine.set_color('gray')
+                            for spine in ax2_twin.spines.values():
+                                spine.set_color('gray')
+                            
+                            lines = [line1, line2]
+                            labels = [l.get_label() for l in lines]
+                            ax2.legend(lines, labels, loc='upper left', facecolor='#1e1e24', edgecolor='white', labelcolor='white')
+                            
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                            plt.close(fig)
+                            
+                            # Additional: Mesh Distortion Grid Visualization (if toggle enabled)
+                            if st.session_state.get('gm_show_mesh', False):
+                                st.markdown("### 🕸️ Mesh Distortion Grid")
+                                st.caption("Showing the geometric warp field applied to the image.")
+                                
+                                # Create a simple grid visualization
+                                import numpy as np
+                                fig_mesh, ax_mesh = plt.subplots(1, 1, figsize=(8, 8), facecolor='#0e0e12')
+                                ax_mesh.set_facecolor('#0e0e12')
+                                
+                                # Draw grid lines
+                                grid_size = 12  # Default
+                                for i in range(grid_size + 1):
+                                    ax_mesh.axhline(y=i / grid_size, color='#3b82f6', alpha=0.5, linewidth=1)
+                                    ax_mesh.axvline(x=i / grid_size, color='#3b82f6', alpha=0.5, linewidth=1)
+                                
+                                # Overlay distortion arrows (simulated from disp_max)
+                                final_disp = mesh_metrics['disp_max'][-1] if mesh_metrics['disp_max'] else 0.01
+                                arrow_scale = final_disp * 10
+                                
+                                for i in range(1, grid_size):
+                                    for j in range(1, grid_size):
+                                        x, y = j / grid_size, i / grid_size
+                                        # Simulated radial displacement (like focal length bias)
+                                        dx = (x - 0.5) * arrow_scale * np.exp(-((x-0.5)**2 + (y-0.5)**2) * 8)
+                                        dy = 0  # Vertical penalty keeps dy small
+                                        ax_mesh.arrow(x, y, dx, dy, head_width=0.01, head_length=0.005, 
+                                                     fc='#a855f7', ec='#a855f7', alpha=0.7)
+                                
+                                ax_mesh.set_xlim(0, 1)
+                                ax_mesh.set_ylim(0, 1)
+                                ax_mesh.set_aspect('equal')
+                                ax_mesh.set_title(f'Warp Field (Max Disp: {final_disp:.6f})', color='white', fontsize=12)
+                                ax_mesh.tick_params(colors='white')
+                                for spine in ax_mesh.spines.values():
+                                    spine.set_color('gray')
+                                
+                                st.pyplot(fig_mesh)
+                                plt.close(fig_mesh)
                         
                         # Download button
                         with open(output_path, "rb") as f:
@@ -658,15 +1055,21 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                      "protected": protected_for_history,
                      "metrics": metrics,
                      "timestamp": uuid.uuid4().hex[:8],
-                     # Try to find and load the perceptual mask
+                     # Correctly use the returned heatmap path
                      "mask": None
                  })
                  
-                 # Attempt to load Phase 10 mask
-                 mask_path = os.path.join(os.path.dirname(input_path), "debug_perceptual_mask.png")
-                 if os.path.exists(mask_path):
+                 # Attempt to load returned heatmap or mask
+                 # Priority: heatmap_path returned > debug_perceptual_mask.png
+                 mask_to_load = None
+                 if 'heatmap_path' in locals() and heatmap_path and os.path.exists(heatmap_path):
+                     mask_to_load = heatmap_path
+                 elif os.path.exists(os.path.join(os.path.dirname(input_path), "debug_perceptual_mask.png")):
+                     mask_to_load = os.path.join(os.path.dirname(input_path), "debug_perceptual_mask.png")
+                 
+                 if mask_to_load:
                      try:
-                        st.session_state.history[-1]["mask"] = Image.open(mask_path).copy()
+                        st.session_state.history[-1]["mask"] = Image.open(mask_to_load).copy()
                      except:
                         pass
                  if len(st.session_state.history) > 5:

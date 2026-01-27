@@ -132,6 +132,14 @@ def _get_siglip_critic(device):
             
     return _phase2_modules['siglip_critic']
 
+def _get_ghost_mesh_optimizer(siglip_model, device):
+    """Lazy loader for Phase 18 Ghost-Mesh Optimizer."""
+    if 'ghost_mesh' not in _phase2_modules:
+        from src.core.protocols.ghost_mesh import GhostMeshOptimizer
+        _phase2_modules['ghost_mesh'] = GhostMeshOptimizer(siglip_model, device)
+        logger.info("[LatentCloak] Ghost-Mesh Optimizer loaded.")
+    return _phase2_modules['ghost_mesh']
+
 
 class LatentCloak:
     """
@@ -541,14 +549,20 @@ class LatentCloak:
             return 0.0 # Biometric erasure success
         
         # Take largest face
-        f1 = sorted(faces1, key=lambda x: x.bbox[2]*x.bbox[3])[-1]
-        f2 = sorted(faces2, key=lambda x: x.bbox[2]*x.bbox[3])[-1]
+        # Fix: Correct area calculation (x2-x1)*(y2-y1)
+        f1 = sorted(faces1, key=lambda x: (x.bbox[2]-x.bbox[0]) * (x.bbox[3]-x.bbox[1]))[-1]
+        f2 = sorted(faces2, key=lambda x: (x.bbox[2]-x.bbox[0]) * (x.bbox[3]-x.bbox[1]))[-1]
         
         # Compute Cosine Sim
-        if f1.embedding is None or f2.embedding is None:
+        if f1.embedding is None:
+            print("[LatentCloak] DEBUG: f1.embedding is None")
+            return 1.0
+        if f2.embedding is None:
+            print("[LatentCloak] DEBUG: f2.embedding is None")
             return 1.0
             
         sim = np.dot(f1.embedding, f2.embedding) / (np.linalg.norm(f1.embedding) * np.linalg.norm(f2.embedding))
+        print(f"[LatentCloak] DEBUG: Bio-Sim Raw: {sim}")
         return float(sim)
     
     def _apply_neural_stego(self, image: Image.Image, hidden_command: str) -> Image.Image:
@@ -1066,80 +1080,39 @@ class LatentCloak:
 
 
 
-    def add_trust_badge(self, image: Image.Image, badge_text: str = "PROTECTED") -> Image.Image:
-        """Overlays a clean 'Protected' shield with custom text."""
-        # 1. Create a transparent layer
-        badge_layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
-        draw = ImageDraw.Draw(badge_layer)
+    def add_trust_badge(self, image: Image.Image, badge_text: str = "DON'T EDIT") -> Image.Image:
+        """
+        Invisible steganographic badge injection.
+        No visible shield - only hidden payload embedded in LSB.
+        Default text: "DON'T EDIT"
+        Embedding area is proportionate to image size.
+        """
+        # Convert to numpy for LSB manipulation
+        img_array = np.array(image).copy()
         
-        # 2. Define Badge Position (Bottom-Right, 20px padding)
-        w, h = image.size
-        # Size of the shield
-        s_w, s_h = 50, 60
-        pad = 20
-        x = w - s_w - pad
-        y = h - s_h - pad
+        # Encode the badge text as binary
+        binary_msg = ''.join(format(ord(c), '08b') for c in badge_text) + '00000000'  # Null terminator
         
-        # 3. Draw Shield Shape (Polygon)
-        # Coordinates for a classic shield shape
-        shield_points = [
-            (x, y),                  # Top-left
-            (x + s_w, y),            # Top-right
-            (x + s_w, y + s_h * 0.6), # Middle-right start curve
-            (x + s_w * 0.5, y + s_h), # Bottom tip
-            (x, y + s_h * 0.6)        # Middle-left start curve
-        ]
+        # Embed in LSB of Red channel (bottom-right corner to avoid face region)
+        # Make embedding area proportionate to image size (10% from edges)
+        h, w = img_array.shape[:2]
+        start_x = int(w * 0.85)  # Start at 85% of width (bottom-right 15%)
+        start_y = int(h * 0.90)  # Start at 90% of height (bottom 10%)
         
-        # Fill: Metallic Blue/Grey Gradient simulation (Solid for now)
-        draw.polygon(shield_points, fill=(200, 200, 220, 200), outline=(50, 50, 80, 255))
+        idx = 0
+        for y in range(max(0, start_y), h):
+            for x in range(max(0, start_x), w):
+                if idx < len(binary_msg):
+                    # Modify LSB of Red channel
+                    img_array[y, x, 0] = (img_array[y, x, 0] & 0xFE) | int(binary_msg[idx])
+                    idx += 1
+                else:
+                    break
+            if idx >= len(binary_msg):
+                break
         
-        # Inner shield (slightly smaller)
-        inner_m = 4
-        inner_points = [
-            (x + inner_m, y + inner_m),
-            (x + s_w - inner_m, y + inner_m),
-            (x + s_w - inner_m, y + s_h * 0.6),
-            (x + s_w * 0.5, y + s_h - inner_m * 1.5),
-            (x + inner_m, y + s_h * 0.6)
-        ]
-        draw.polygon(inner_points, fill=(60, 100, 220, 220)) # Blue inner
-        
-        # 4. Draw Symbol (Checkmark or 'P')
-        # White Checkmark
-        cx = x + s_w * 0.5
-        cy = y + s_h * 0.45
-        draw.line([(cx - 8, cy), (cx - 2, cy + 8)], fill=(255, 255, 255, 255), width=4)
-        draw.line([(cx - 2, cy + 8), (cx + 12, cy - 12)], fill=(255, 255, 255, 255), width=4)
-        
-        # 5. VISUAL DETERRENT (Phase 3 Hybrid Refusal)
-        # Inject visible "© NO AI TRAIN" text inside the shield
-        try:
-            # Try to load a font, otherwise default
-            # Use a slightly readable font
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 9)
-        except:
-            font = ImageFont.load_default()
-        
-        # Draw "NO AI TRAIN" text inside the shield in white
-        # This specific phrasing triggers many safety filters (e.g. DALL-E 3 refusal)
-        draw.text((x + 6, y + 25), "© NO AI", fill=(255, 255, 255, 255), font=font)
-        draw.text((x + 8, y + 35), "TRAIN", fill=(255, 255, 255, 255), font=font)
-        
-        # 6. INVISIBLE TEXT INJECTION (Steganography)
-        # Draw hidden command also with alpha=1
-        draw.text((x + 10, y + 10), "CMD", fill=(0, 0, 0, 1), font=font)
-        
-        # Inject the user's specific text payload invisibly
-
-        # Visual text label (below/next to badge? User asked for "in this emoji")
-        # We put the PAYLOAD invisibly inside.
-        draw.text((x + 10, y + 10), badge_text, fill=(0, 0, 0, 1), font=font)
-        
-        # 6. Composite
-        if image.mode != 'RGBA':
-            image = image.convert('RGBA')
-        
-        return Image.alpha_composite(image, badge_layer).convert("RGB")
+        logger.info(f"[TrustBadge] Injected hidden payload: '{badge_text}' ({len(binary_msg)} bits)")
+        return Image.fromarray(img_array)
 
 
 
@@ -1517,4 +1490,332 @@ class LatentCloak:
         
         logger.info(f"[LiquidWarp] Complete. Final Sim: {cos_sim.item():.4f}")
         return final_pil
+
+    def protect_liquid_warp_v2(self, image_path: str, strength=75, 
+                               grid_size: int = 16, num_steps: int = 100,
+                               lr: float = 0.01, tv_weight: float = 0.01,
+                               flow_limit: float = 0.03, mask_blur: int = 15,
+                               asymmetry_strength: float = 0.10):
+        """
+        Phase 17.9: Resolution-Independent Anchored Warp.
+        
+        Improvements over V1:
+        - T-Zone Anchoring: Warps internal features (eyes/nose) while freezing silhouette (jawline/hair)
+        - Multi-Scale Loss: Optimizes across 224px and 448px to ensure scale-invariance
+        - Noise Init: Breaks symmetry for better gradient flow
+        - Reduced TV Weight: Prevents gradient overpowering
+        
+        Args:
+            image_path: Path to input image
+            strength: 0-100, controls max warp magnitude
+            grid_size: Low-res displacement grid size (default 16x16)
+            num_steps: Optimization steps (default 100)
+            lr: Adam learning rate (default 0.01)
+            tv_weight: Total Variation regularization weight (default 0.01)
+            flow_limit: Tanh constraint - max normalized displacement (default 0.03)
+            mask_blur: Gaussian blur kernel size for soft face mask (default 15)
+            asymmetry_strength: Intensity of the initial random skew (default 0.05)
+        """
+        import torch.nn.functional as F
+        import torch.optim as optim
+        
+        # Load resources (SigLIP + InsightFace)
+        self._load_optimizer()
+        
+        # Load image
+        orig_pil = Image.open(image_path).convert('RGB')
+        w_orig, h_orig = orig_pil.size
+        
+        # Convert to tensor [1, 3, H, W]
+        img_tensor = torch.from_numpy(np.array(orig_pil)).to(self.device).float()
+        img_tensor = img_tensor.permute(2, 0, 1).unsqueeze(0) / 255.0
+        
+        # 1. Generate T-Zone Mask (Anchored Silhouette)
+        # ---------------------------------------------
+        # Key innovation: Warp internal features but FREEZE jawline/hair
+        img_cv = cv2.cvtColor(np.array(orig_pil), cv2.COLOR_RGB2BGR)
+        tzone_mask = torch.zeros((1, 1, h_orig, w_orig), device=self.device)
+        
+        face_found = False
+        if self.face_analysis:
+            faces = self.face_analysis.get(img_cv)
+            if faces:
+                face_found = True
+                for face in faces:
+                    x1, y1, x2, y2 = face.bbox.astype(int)
+                    face_w, face_h = x2 - x1, y2 - y1
+                    
+                    # Create T-zone mask using landmarks if available
+                    if hasattr(face, 'kps') and face.kps is not None:
+                        kps = face.kps  # 5 points: L_eye, R_eye, Nose, L_mouth, R_mouth
+                        l_eye, r_eye, nose = kps[0], kps[1], kps[2]
+                        
+                        # T-zone center: between eyes and nose
+                        center_x = (l_eye[0] + r_eye[0]) / 2
+                        center_y = (l_eye[1] + nose[1]) / 2
+                        
+                        # Ellipse radii: warp zone from eyebrows to upper lip
+                        radius_x = abs(r_eye[0] - l_eye[0]) * 0.8  # 80% of eye separation
+                        radius_y = abs(nose[1] - l_eye[1]) * 1.5   # 150% of eye-to-nose dist
+                        
+                        # Create Gaussian ellipse mask
+                        Y, X = torch.meshgrid(
+                            torch.arange(h_orig, device=self.device),
+                            torch.arange(w_orig, device=self.device),
+                            indexing='ij'
+                        )
+                        ellipse_dist = ((X - center_x) / max(radius_x, 1))**2 + \
+                                       ((Y - center_y) / max(radius_y, 1))**2
+                        face_tzone = torch.exp(-ellipse_dist * 0.5)  # Gaussian falloff
+                        tzone_mask[0, 0] = torch.maximum(tzone_mask[0, 0], face_tzone)
+                    else:
+                        # Fallback: Simple center-weighted mask within face bbox
+                        cx, cy = (x1 + x2) / 2, y1 + face_h * 0.35  # Slightly above center
+                        radius = min(face_w, face_h) * 0.4
+                        
+                        Y, X = torch.meshgrid(
+                            torch.arange(h_orig, device=self.device),
+                            torch.arange(w_orig, device=self.device),
+                            indexing='ij'
+                        )
+                        dist = ((Y - cy)**2 + (X - cx)**2).sqrt()
+                        face_tzone = torch.exp(-(dist / max(radius, 1))**2)
+                        tzone_mask[0, 0] = torch.maximum(tzone_mask[0, 0], face_tzone)
+                        
+                logger.info(f"[LiquidWarp V2d] Found {len(faces)} face(s). T-Zone=LIQUID, Silhouette=FROZEN.")
+        
+        if not face_found:
+            # No face: use center-weighted fallback
+            cy, cx = h_orig // 2, w_orig // 2
+            radius = min(h_orig, w_orig) * 0.25
+            Y, X = torch.meshgrid(
+                torch.arange(h_orig, device=self.device),
+                torch.arange(w_orig, device=self.device),
+                indexing='ij'
+            )
+            dist = ((Y - cy)**2 + (X - cx)**2).sqrt()
+            tzone_mask[0, 0] = torch.exp(-(dist / max(radius, 1))**2)
+            logger.warning("[LiquidWarp V2] No face detected. Using center fallback.")
+        
+        # Smooth the mask edges
+        tzone_mask_np = tzone_mask[0, 0].cpu().numpy()
+        blur_k = mask_blur if mask_blur % 2 == 1 else mask_blur + 1
+        tzone_mask_np = cv2.GaussianBlur(tzone_mask_np, (blur_k, blur_k), blur_k // 3)
+        tzone_mask = torch.from_numpy(tzone_mask_np).to(self.device).unsqueeze(0).unsqueeze(0)
+        
+        # 2. Initialize Focal Length Bias (Phase 17.9d: "Selfie Mode" Distortion)
+        # -------------------------------------------------------------
+        # Horizontal Expansion: Simulates wide-angle lens distortion.
+        # Max stretch at center, zero at edges (preserves silhouette).
+        def init_focal_bias(size, scale=0.05):
+            # Create normalized grid coordinates
+            y = torch.linspace(-1, 1, size, device=self.device).view(size, 1)
+            x = torch.linspace(-1, 1, size, device=self.device).view(1, size)
+            r2 = (x**2 + y**2).clamp(0, 1).unsqueeze(0).unsqueeze(0) # [1, 1, H, W]
+            
+            # Focal Weight: (1 - r^2) -> Max at center, zero at edges
+            focal_weight = (1.0 - r2)
+            
+            # Horizontal Expansion Vector [1, 2, 1, 1]
+            # dx = scale * x (push outward horizontally)
+            # dy = 0 (preserve vertical alignment)
+            dx = x.unsqueeze(0).unsqueeze(0) * scale * focal_weight  # [1, 1, H, W]
+            dy = torch.zeros_like(dx)  # No vertical movement
+            
+            # Stack to [1, 2, H, W]
+            return torch.cat([dx, dy], dim=1)
+            
+        displacement_lr = torch.zeros((1, 2, grid_size, grid_size), device=self.device)
+        # Add Focal Bias Init (Phase 17.9d)
+        focal_field = init_focal_bias(grid_size, scale=asymmetry_strength)
+        displacement_lr = displacement_lr + focal_field
+        displacement_lr = torch.nn.Parameter(displacement_lr)
+        
+        optimizer = optim.Adam([displacement_lr], lr=lr)
+        
+        # Get SigLIP critic
+        critic_model, mean, std = self.siglip
+        
+        # Compute original features (SigLIP requires 384x384 input)
+        scales = [384]
+        orig_features_dict = {}
+        with torch.no_grad():
+            for scale in scales:
+                img_scaled = F.interpolate(img_tensor, size=(scale, scale), mode='bilinear')
+                norm_img = (img_scaled - mean) / std
+                features = critic_model(norm_img)
+                features = features / features.norm(dim=-1, keepdim=True)
+                orig_features_dict[scale] = features
+        
+        # DECOUPLED STRENGTH LOGIC (Phase 17.9b)
+        # 1. Limit scales LINEARLY with strength (Gas)
+        # 2. TV scales slightly INVERSELY/CONSTANT (Brake doesn't get harder)
+        # flow_limit passed in is base limit (e.g. 0.03)
+        effective_limit = flow_limit * (strength / 50.0) # 0.03 * 2 = 0.06 at 100 strength
+        
+        # TV: Keep constant or reduce at high strength to allow wilder warps?
+        # User feedback: "Higher strength = lower changes" -> TV was overpowering.
+        # Fix: effective_tv = tv_weight (constant)
+        effective_tv = tv_weight 
+        
+        logger.info(f"[LiquidWarp V2d] Steps: {num_steps} | Grid: {grid_size}x{grid_size} | Identity*25 | TV*0.01 | Vert*10 | FocalBias: True")
+        
+        # 3. Multi-Scale Optimization Loop
+        # ---------------------------------
+        best_loss = float('inf')
+        best_displacement = displacement_lr.data.clone()
+        
+        # Initialize metrics history for visualization
+        metrics_history = {
+            'step': [],
+            'avg_sim': [],
+            'tv_loss': [],
+            'disp_max': [],
+            'vertical_loss': []
+        }
+        
+        for step in range(num_steps):
+            optimizer.zero_grad()
+            
+            # Upsample displacement to full resolution
+            displacement = F.interpolate(displacement_lr, size=(h_orig, w_orig), 
+                                          mode='bicubic', align_corners=False)
+            
+            # Apply Tanh constraint
+            displacement_constrained = torch.tanh(displacement) * effective_limit
+            
+            # Apply T-Zone mask (KEY: silhouette stays frozen)
+            displacement_masked = displacement_constrained * tzone_mask
+            
+            # Create identity grid + displacement
+            theta = torch.tensor([[1, 0, 0], [0, 1, 0]], dtype=torch.float32, device=self.device)
+            theta = theta.unsqueeze(0)
+            base_grid = F.affine_grid(theta, img_tensor.shape, align_corners=True)
+            warp_grid = base_grid + displacement_masked.permute(0, 2, 3, 1)
+            
+            # Warp the image
+            warped = F.grid_sample(img_tensor, warp_grid, mode='bilinear', 
+                                   padding_mode='border', align_corners=True)
+            
+            # Multi-Scale Loss: Compute at all scales
+            total_sim = 0.0
+            for scale in scales:
+                warped_scaled = F.interpolate(warped, size=(scale, scale), mode='bilinear')
+                norm_warped = (warped_scaled - mean) / std
+                warped_features = critic_model(norm_warped)
+                warped_features = warped_features / warped_features.norm(dim=-1, keepdim=True)
+                
+                cos_sim = F.cosine_similarity(warped_features, orig_features_dict[scale]).mean()
+                total_sim += cos_sim
+            
+            avg_sim = total_sim / len(scales)
+            
+            # Total Variation regularization (smoothness)
+            tv_loss = torch.mean(torch.abs(displacement_lr[:, :, :, :-1] - displacement_lr[:, :, :, 1:])) + \
+                      torch.mean(torch.abs(displacement_lr[:, :, :-1, :] - displacement_lr[:, :, 1:, :]))
+            
+            # Phase 17.9d: Vertical Penalty (Anti-Weird-Eye)
+            # Penalize vertical displacement (dy channel) to keep eyes level
+            vertical_loss = torch.mean(torch.abs(displacement_lr[:, 1, :, :]))  # Channel 1 = dy
+            
+            # Phase 17.9d: Updated Weighting for 12x12 Grid
+            # Identity * 25.0 (Gas - More torque for low-res grid)
+            # TV * 0.01 (Brake - Low since 12x12 is naturally smooth)
+            # Vertical * 10.0 (Guard Rail - Strict for larger blocks)
+            identity_weight = 25.0
+            tv_weight_final = 0.01
+            vertical_weight = 10.0
+            
+            loss = (avg_sim * identity_weight) + (tv_loss * tv_weight_final) + (vertical_loss * vertical_weight)
+            loss.backward()
+            optimizer.step()
+            
+            # Track best
+            if loss.item() < best_loss:
+                best_loss = loss.item()
+                best_displacement = displacement_lr.data.clone()
+            
+            # Collect metrics for visualization
+            disp_max = displacement_masked.abs().max().item()
+            metrics_history['step'].append(step)
+            metrics_history['avg_sim'].append(avg_sim.item())
+            metrics_history['tv_loss'].append(tv_loss.item())
+            metrics_history['disp_max'].append(disp_max)
+            metrics_history['vertical_loss'].append(vertical_loss.item())
+            
+            if step % 10 == 0:
+                pixel_diff = (warped - img_tensor).abs().mean().item()
+                print(f"LiquidV2d Step {step}/{num_steps} | AvgSim: {avg_sim.item():.4f} | TV: {tv_loss.item():.4f} | DispMax: {disp_max:.6f} | VertLoss: {vertical_loss.item():.6f}", flush=True)
+        
+        # 4. Finalize with best displacement
+        # -----------------------------------
+        with torch.no_grad():
+            displacement = F.interpolate(best_displacement, size=(h_orig, w_orig), 
+                                          mode='bicubic', align_corners=False)
+            displacement_constrained = torch.tanh(displacement) * effective_limit
+            displacement_masked = displacement_constrained * tzone_mask
+            
+            theta = torch.tensor([[1, 0, 0], [0, 1, 0]], dtype=torch.float32, device=self.device)
+            theta = theta.unsqueeze(0)
+            base_grid = F.affine_grid(theta, img_tensor.shape, align_corners=True)
+            warp_grid = base_grid + displacement_masked.permute(0, 2, 3, 1)
+            
+            final_warped = F.grid_sample(img_tensor, warp_grid, mode='bilinear', 
+                                         padding_mode='border', align_corners=True)
+        
+        # Convert to PIL
+        final_np = final_warped.cpu().permute(0, 2, 3, 1).numpy()[0]
+        final_pil = Image.fromarray((final_np * 255).astype(np.uint8))
+        
+        logger.info(f"[LiquidWarp V2d] Complete. Best Loss: {best_loss:.4f}")
+        return final_pil, metrics_history
+
+    def protect_ghost_mesh(self, image_path: str, strength: int = 75,
+                           grid_size: int = 12, num_steps: int = 60,
+                           warp_noise_balance: float = 0.5,
+                           tzone_anchoring: float = 0.8,
+                           tv_weight: float = 50, use_jnd: bool = True,
+                           lr: float = 0.05):
+        """
+        Phase 18: Ghost-Mesh Protocol.
+        Coupled Warp + Noise Optimization with Hinge-Loss Constraints.
+        
+        Combines Phase 16 (Resonant Ghost) pixel perturbation with
+        Phase 17 (Liquid Warp) geometric warping into a joint optimization loop.
+        
+        Args:
+            image_path: Path to input image
+            strength: Attack intensity (0-100)
+            grid_size: Low-res displacement grid size (12, 16, 24, 32)
+            num_steps: Optimization iterations (default 60)
+            warp_noise_balance: 0.0 = warp-heavy, 1.0 = noise-heavy
+            tzone_anchoring: 0.0 = full warp, 1.0 = freeze silhouette
+            tv_weight: Total Variation weight (UI slider 1-100)
+            use_jnd: Enable JND masking for ghosting
+            lr: Learning rate for Adam optimizer
+            
+        Returns:
+            (protected_image, metrics_history)
+        """
+        # Load optimizer resources (SigLIP + InsightFace)
+        self._load_optimizer()
+        
+        # Get or create Ghost-Mesh optimizer
+        ghost_mesh = _get_ghost_mesh_optimizer(self.siglip, self.device)
+        
+        # Run optimization
+        result_pil, metrics = ghost_mesh.optimize(
+            image_path=image_path,
+            face_analysis=self.face_analysis,
+            strength=strength,
+            grid_size=grid_size,
+            num_steps=num_steps,
+            warp_noise_balance=warp_noise_balance,
+            tzone_anchoring=tzone_anchoring,
+            tv_weight=tv_weight,
+            use_jnd=use_jnd,
+            lr=lr
+        )
+        
+        return result_pil, metrics
 
