@@ -1771,11 +1771,12 @@ class LatentCloak:
         return final_pil, metrics_history
 
     def protect_ghost_mesh(self, image_path: str, strength: int = 75,
-                           grid_size: int = 12, num_steps: int = 60,
+                           grid_size: int = 24, num_steps: int = 60,
                            warp_noise_balance: float = 0.5,
                            tzone_anchoring: float = 0.8,
                            tv_weight: float = 50, use_jnd: bool = True,
-                           lr: float = 0.05):
+                           lr: float = 0.05,
+                           noise_strength: float = None, warp_strength: float = None):
         """
         Phase 18: Ghost-Mesh Protocol.
         Coupled Warp + Noise Optimization with Hinge-Loss Constraints.
@@ -1814,7 +1815,9 @@ class LatentCloak:
             tzone_anchoring=tzone_anchoring,
             tv_weight=tv_weight,
             use_jnd=use_jnd,
-            lr=lr
+            lr=lr,
+            noise_strength=noise_strength,
+            warp_strength=warp_strength
         )
         
         return result_pil, metrics

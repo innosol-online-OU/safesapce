@@ -62,12 +62,12 @@ class GhostMeshOptimizer(nn.Module):
         self.lpips_fn = None  # Lazy-loaded LPIPS
         
         # Loss weights (Phase 18 CORRECTED - Scale Matched)
-        self.w_identity = 150.0    # Aggressive push until 0.5 threshold
-        self.w_lpips = 800.0       # Heavy brake when LPIPS > 0.02
+        self.w_identity = 300.0    # Step 1: Push hard until 0.25 (Blind the critic)
+        self.w_lpips = 400.0       # Step 2: Looser brake (Allow 0.045 texture change)
         self.w_tv = 0.05           # Minimal smoothing
         self.w_vertical = 2.0      # Keep eyes level
-        self.lpips_threshold = 0.02  # Lowered from 0.05 to activate earlier
-        self.identity_threshold = 0.5  # Target: CosSim < 0.5 = identity broken
+        self.lpips_threshold = 0.045 # Step 2: Raised from 0.02 to allow semantic noise
+        self.identity_threshold = 0.25 # Step 1: Lowered from 0.5 to force deeper attack
         
     def _load_lpips(self):
         """Lazy-load LPIPS metric."""
@@ -402,10 +402,11 @@ class GhostMeshOptimizer(nn.Module):
         return torch.cat([dx, dy], dim=1)
     
     def optimize(self, image_path: str, face_analysis=None,
-                 strength: int = 75, grid_size: int = 12, num_steps: int = 60,
+                 strength: int = 75, grid_size: int = 24, num_steps: int = 60,
                  warp_noise_balance: float = 0.5, tzone_anchoring: float = 0.8,
                  tv_weight: float = 50, use_jnd: bool = True,
-                 lr: float = 0.05) -> Tuple[Image.Image, Dict]:
+                 lr: float = 0.05,
+                 noise_strength: float = None, warp_strength: float = None) -> Tuple[Image.Image, Dict]:
         """
         Run Ghost-Mesh optimization loop.
         
@@ -436,14 +437,19 @@ class GhostMeshOptimizer(nn.Module):
         tzone_mask = self.generate_tzone_mask(img_tensor, face_analysis, tzone_anchoring)
         jnd_mask = self.generate_jnd_mask(img_tensor, strength / 100.0) if use_jnd else None
         
-        # Calculate effective limits based on balance
-        # Balance 0.0 = warp-heavy: high warp, low noise
-        # Balance 1.0 = noise-heavy: low warp, high noise
-        base_noise_eps = 0.05 * (strength / 50.0)
-        base_warp_limit = 0.03 * (strength / 50.0)
-        
-        noise_eps = base_noise_eps * (0.3 + 0.7 * warp_noise_balance)
-        warp_limit = base_warp_limit * (0.3 + 0.7 * (1 - warp_noise_balance))
+        # Calculate effective limits
+        # If granular controls are provided, use them directly
+        if noise_strength is not None and warp_strength is not None:
+             # Direct mapping: 50 -> 0.05 noise, 50 -> 0.03 warp
+             noise_eps = 0.05 * (noise_strength / 50.0)
+             warp_limit = 0.03 * (warp_strength / 50.0)
+        else:
+             # Legacy Strength/Balance logic
+             base_noise_eps = 0.05 * (strength / 50.0)
+             base_warp_limit = 0.03 * (strength / 50.0)
+             
+             noise_eps = base_noise_eps * (0.3 + 0.7 * warp_noise_balance)
+             warp_limit = base_warp_limit * (0.3 + 0.7 * (1 - warp_noise_balance))
         
         # Map TV weight from UI (1-100) to actual weight
         actual_tv_weight = tv_weight / 5000.0  # 50 -> 0.01
@@ -454,7 +460,11 @@ class GhostMeshOptimizer(nn.Module):
         delta_noise.data.uniform_(-0.01, 0.01)
         delta_warp = self.init_focal_bias(grid_size, scale=0.05).clone().requires_grad_(True)
         
-        optimizer = torch.optim.Adam([delta_noise, delta_warp], lr=lr)
+        # Step 3: Split optimizer learning rates (Noise First)
+        optimizer = torch.optim.Adam([
+            {'params': [delta_noise], 'lr': 0.05},   # Aggressive Noise
+            {'params': [delta_warp],  'lr': 0.005}   # Subtle Warp (1/10th strength)
+        ])
         
         # Metrics tracking
         metrics_history = {

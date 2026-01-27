@@ -135,11 +135,14 @@ class CloakEngine:
                     l_limit = st.session_state.get('liquid_limit', 0.004)
                     l_blur = st.session_state.get('liquid_blur', 15)
                     # Ghost-Mesh Params (Phase 18)
-                    gm_grid = st.session_state.get('ghost_mesh_grid', 12)
+                    gm_grid = st.session_state.get('ghost_mesh_grid', 24)
                     gm_balance = st.session_state.get('ghost_mesh_balance', 0.5)
                     gm_anchoring = st.session_state.get('ghost_mesh_anchoring', 0.8)
                     gm_tv = st.session_state.get('ghost_mesh_tv', 50)
                     gm_jnd = st.session_state.get('ghost_mesh_jnd', True)
+                    # Granular Controls
+                    gm_noise = st.session_state.get('ghost_mesh_noise', None)
+                    gm_warp = st.session_state.get('ghost_mesh_warp', None)
                 except Exception:
                     # Fallback for CLI/API usage
                     p_strength = 50
@@ -151,11 +154,13 @@ class CloakEngine:
                     l_steps = 100
                     l_limit = 0.004
                     l_blur = 15
-                    gm_grid = 12
+                    gm_grid = 24
                     gm_balance = 0.5
                     gm_anchoring = 0.8
                     gm_tv = 50
                     gm_jnd = True
+                    gm_noise = None
+                    gm_warp = None
                 
                 # Determine loop count
                 # V2: max_retries = Total Runs (Best of N)
@@ -237,7 +242,9 @@ class CloakEngine:
                             warp_noise_balance=gm_balance,
                             tzone_anchoring=gm_anchoring,
                             tv_weight=gm_tv,
-                            use_jnd=gm_jnd
+                            use_jnd=gm_jnd,
+                            noise_strength=gm_noise,
+                            warp_strength=gm_warp
                         )
                         # Store mesh metrics for visualization
                         ensemble_stats['mesh_metrics'] = mesh_metrics

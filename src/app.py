@@ -367,26 +367,43 @@ with st.sidebar:
             st.info("👻🕸️ **Phase 18 (Ghost-Mesh)**\n\nCoupled Warp + Noise Optimization with Hinge-Loss Constraints.")
             
             with st.expander("👻🕸️ Ghost-Mesh Controls", expanded=True):
-                # 1. Attack Intensity (Strength)
-                p_strength = st.slider(
-                    "Attack Intensity", 
-                    min_value=1, max_value=100, 
-                    value=st.session_state.get('phantom_strength', 75), 
-                    help="Higher = Stronger identity disruption."
-                )
+                # Granular Controls Toggle
+                granular_controls = st.toggle("Granular Controls", value=True, help="Separate Warp vs Noise strength.")
                 
-                # 2. Warp/Noise Balance
-                gm_balance = st.slider(
-                    "Warp/Noise Balance",
-                    min_value=0.0, max_value=1.0, value=0.5, step=0.1,
-                    help="0.0 = Warp-heavy (geometric). 1.0 = Noise-heavy (pixel)."
-                )
+                if granular_controls:
+                    gm_noise = st.slider("Noise Intensity", 0, 100, 75, help="Pixel perturbation strength.")
+                    gm_warp = st.slider("Warp Intensity", 0, 100, 50, help="Geometric distortion strength.")
+                    
+                    st.session_state['ghost_mesh_noise'] = gm_noise
+                    st.session_state['ghost_mesh_warp'] = gm_warp
+                    
+                    # Dummy values for legacy logic
+                    p_strength = max(gm_noise, gm_warp)
+                    gm_balance = 0.5
+                else:
+                    st.session_state['ghost_mesh_noise'] = None
+                    st.session_state['ghost_mesh_warp'] = None
+                    
+                    # 1. Attack Intensity (Strength)
+                    p_strength = st.slider(
+                        "Attack Intensity", 
+                        min_value=1, max_value=100, 
+                        value=st.session_state.get('phantom_strength', 75), 
+                        help="Higher = Stronger identity disruption."
+                    )
+                    
+                    # 2. Warp/Noise Balance
+                    gm_balance = st.slider(
+                        "Warp/Noise Balance",
+                        min_value=0.0, max_value=1.0, value=0.5, step=0.1,
+                        help="0.0 = Warp-heavy (geometric). 1.0 = Noise-heavy (pixel)."
+                    )
                 
                 # 3. Grid Resolution
                 gm_grid_size = st.select_slider(
                     "Grid Resolution",
                     options=[12, 16, 24, 32],
-                    value=12,
+                    value=24,
                     help="Low (12) = global shifts. High (32) = local distortion."
                 )
                 
