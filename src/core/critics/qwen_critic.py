@@ -295,12 +295,51 @@ class QwenCritic:
                  print(f"[QwenCritic API] Pairwise Error: {e}")
                  return True, "API Logic Error", 0.0
         else:
-            # Local transformers logic
-            # Qwen VL utils supports multiple images
-            pass 
-            # TODO: Implement Local High-Res Pairwise if needed.
-            # Fallback to single image critique if local?
-            return self.critique(probe_path, target_name)
+            # LOCAL MODE - Interleaved Images
+            from qwen_vl_utils import process_vision_info
+            
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Image A (Reference):"},
+                        {"type": "image", "image": reference_path},
+                        {"type": "text", "text": "\nImage B (Probe):"},
+                        {"type": "image", "image": probe_path},
+                        {"type": "text", "text": "\n" + prompt},
+                    ],
+                }
+            ]
+            
+            # Prepare inputs
+            text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            image_inputs, video_inputs = process_vision_info(messages)
+            inputs = self.processor(
+                text=[text],
+                images=image_inputs,
+                videos=video_inputs,
+                padding=True,
+                return_tensors="pt",
+            )
+            inputs = inputs.to("cuda")
+
+            # Generate
+            import torch
+            with torch.no_grad():
+                if hasattr(self.model, 'dtype'):
+                     for k, v in inputs.items():
+                         if torch.is_floating_point(v):
+                             inputs[k] = v.to(self.model.dtype)
+                generated_ids = self.model.generate(**inputs, max_new_tokens=128)
+            
+            generated_ids_trimmed = [
+                out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+            ]
+            output_text = self.processor.batch_decode(
+                generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+            )[0]
+            
+            print(f"[QwenCritic] Pairwise Analysis: {output_text}")
 
         # Parse Logic
         is_match = False

@@ -7,6 +7,27 @@ import streamlit.elements.image as st_image
 import streamlit.runtime as st_runtime
 from io import BytesIO
 import sys
+from src.core.session_manager import LiveSessionManager
+from src.views.live_dashboard import render_live_dashboard
+
+@st.cache_resource
+def get_live_manager():
+    return LiveSessionManager()
+
+@st.cache_resource
+def get_qwen_critic():
+    from src.core.critics.qwen_critic import QwenCritic
+    return QwenCritic()
+
+@st.cache_resource
+def load_face_analysis():
+    import insightface
+    try:
+        app = insightface.app.FaceAnalysis(name='buffalo_l', providers=['CUDAExecutionProvider'])
+    except:
+        app = insightface.app.FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
+    app.prepare(ctx_id=0, det_size=(640, 640))
+    return app
 
 # --- AGGRESSIVE STREAMLIT COMPATIBILITY PATCH (Phase 15.Z fix) ---
 def image_to_url_patch(image, width, clamp, channels, output_format, image_id):
@@ -398,6 +419,7 @@ with st.sidebar:
                         min_value=0.0, max_value=1.0, value=0.5, step=0.1,
                         help="0.0 = Warp-heavy (geometric). 1.0 = Noise-heavy (pixel)."
                     )
+                    st.session_state['ghost_mesh_balance'] = gm_balance
                 
                 # 3. Grid Resolution
                 gm_grid_size = st.select_slider(
@@ -406,6 +428,7 @@ with st.sidebar:
                     value=24,
                     help="Low (12) = global shifts. High (32) = local distortion."
                 )
+                st.session_state['ghost_mesh_grid'] = gm_grid_size
                 
                 # 4. T-Zone Anchoring
                 gm_anchoring = st.slider(
@@ -413,6 +436,7 @@ with st.sidebar:
                     min_value=0.0, max_value=1.0, value=0.8, step=0.1,
                     help="1.0 = Freeze silhouette/jawline. 0.0 = Full warp everywhere."
                 )
+                st.session_state['ghost_mesh_anchoring'] = gm_anchoring
                 
                 # 5. Grain Control (TV Weight)
                 gm_tv = st.slider(
@@ -420,6 +444,7 @@ with st.sidebar:
                     min_value=1, max_value=100, value=50,
                     help="Higher = Smoother noise. Lower = More grain."
                 )
+                st.session_state['ghost_mesh_tv'] = gm_tv
                 
                 # 6. Ghost Masking (JND)
                 gm_jnd = st.checkbox(
@@ -427,6 +452,7 @@ with st.sidebar:
                     value=True,
                     help="Apply texture-only noise (invisible in smooth areas)."
                 )
+                st.session_state['ghost_mesh_jnd'] = gm_jnd
                 
                 # 7. Optimization Steps
                 optimization_steps = st.slider(
@@ -434,6 +460,7 @@ with st.sidebar:
                     min_value=30, max_value=120, value=60, step=10,
                     help="More cycles = deeper identity erasure."
                 )
+                st.session_state['ghost_mesh_steps'] = optimization_steps
                 
                 # 8. Visualize Mesh Distortion (optional)
                 st.divider()
@@ -748,6 +775,51 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                 # Determine target profile for engine
                 # target_profile_val is already set from sidebar
                 
+                # Live Mode Redirect (Phase 18)
+                if is_ghost_mesh:
+                     live_params = {
+                          'image_path': input_path,
+                          'face_analysis': load_face_analysis(), # Inject Face Detection
+                          'strength': p_strength, 
+                          'grid_size': st.session_state.get('ghost_mesh_grid', 24),
+                          'num_steps': optimization_steps,
+                          'warp_noise_balance': st.session_state.get('ghost_mesh_balance', 0.5),
+                          'tzone_anchoring': st.session_state.get('ghost_mesh_anchoring', 0.8),
+                          'tv_weight': st.session_state.get('ghost_mesh_tv', 50),
+                          'use_jnd': st.session_state.get('ghost_mesh_jnd', True),
+                          'lr': 1.0, # Tanh params need high LR (0.05 * 20 = 1.0)
+                          'noise_strength': st.session_state.get('ghost_mesh_noise'),
+                          'warp_strength': st.session_state.get('ghost_mesh_warp')
+                     }
+                     
+                     # Validation Callback
+                     def validate_api(pil_img, ref_img=None):
+                         import uuid, os
+                         critic = get_qwen_critic()
+                         
+                         tmp_probe = f"tmp_prb_{uuid.uuid4().hex}.png"
+                         tmp_ref = f"tmp_ref_{uuid.uuid4().hex}.png"
+                         
+                         pil_img.save(tmp_probe)
+                         
+                         try:
+                             if ref_img:
+                                 ref_img.save(tmp_ref)
+                                 passed, reason, score = critic.critique_pairwise(tmp_ref, tmp_probe)
+                             else:
+                                 passed, reason, score = critic.critique(tmp_probe, "Target")
+                             return reason
+                         except Exception as e:
+                             return f"Error: {str(e)}"
+                         finally:
+                             if os.path.exists(tmp_probe): os.remove(tmp_probe)
+                             if os.path.exists(tmp_ref): os.remove(tmp_ref)
+                             
+                     live_manager = get_live_manager()
+                     live_manager.init_session(engine.get_ghost_mesh_optimizer(), live_params, validator_fn=validate_api)
+                     st.session_state['live_session_active'] = True
+                     st.rerun()
+
                 success, heatmap_path, metrics = engine.apply_defense(
                     input_path,
                     output_path,
@@ -1107,6 +1179,11 @@ if st.session_state.history:
                 st.image(item['protected'], caption="Protected", width="stretch")
             with hc3:
                 st.json(item['metrics'])
+# ==================== LIVE DASHBOARD (Phase 18) ====================
+if st.session_state.get('live_session_active', False):
+    live_manager = get_live_manager()
+    render_live_dashboard(live_manager)
+
 # ==================== FOOTER ====================
 st.divider()
 

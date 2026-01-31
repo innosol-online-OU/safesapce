@@ -27,6 +27,29 @@ class CloakEngine:
         self.stego_injector = None
         self.qwen_critic = None
 
+    def get_ghost_mesh_optimizer(self):
+        """Lazy load and return the GhostMesh optimizer."""
+        if self.latent_cloak is None:
+             print(f"[CloakEngine] Initializing LatentCloak for GhostMesh (Lazy)...")
+             from src.core.protocols.latent_cloak import LatentCloak
+             self.latent_cloak = LatentCloak(lite_mode=True)
+        
+        # Ensure underlying resources (SigLIP) are loaded
+        # Note: lite_mode=True sets models_loaded=True but doesn't load siglip.
+        # So we must check siglip directly.
+        if self.latent_cloak.siglip is None:
+             self.latent_cloak._load_optimizer()
+        
+        # Ensure ghost_mesh is initialized
+        if not hasattr(self.latent_cloak, 'ghost_mesh') or self.latent_cloak.ghost_mesh is None:
+             from src.core.protocols.ghost_mesh import GhostMeshOptimizer
+             self.latent_cloak.ghost_mesh = GhostMeshOptimizer(
+                 siglip_model=self.latent_cloak.siglip,
+                 device=self.latent_cloak.device
+             )
+             
+        return self.latent_cloak.ghost_mesh
+
     def apply_defense(self, input_path: str, output_path: str, visual_mode: str = "latent_diffusion",
                      compliance: bool = True, strength: int = 50, face_boost: float = 1.0,
                      user_mask: Optional[np.ndarray] = None, use_badge: bool = True, badge_text: str = "DON'T EDIT",
