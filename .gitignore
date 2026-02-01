@@ -69,3 +69,4 @@ nul
 *_DRAFT.md
 runner_data/
 gitea_data/
+.env
