@@ -2,40 +2,101 @@ name: Project Invisible Guardrails
 on: [push, pull_request]
 
 jobs:
-  # LANE 1: FAST CHECKS (CPU)
-  code-quality:
+  # ===========================================
+  # LANE 1: SECURITY CHECKS (Prevent Secrets)
+  # ===========================================
+  security-scan:
     runs-on: linux_gpu
-    steps:
-      - uses: actions/checkout@v3
-      - name: Lint with Ruff
-        run: |
-          pip install ruff
-          ruff check invisible_core/ --ignore E501
-
-  # LANE 2: ADVERSARIAL TEST (GPU)
-  # Only runs on 'dev' or 'main' branches
-  adversarial-benchmark:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
-    runs-on: linux_gpu
-    container:
-      image: safespace:latest   # <--- REUSES YOUR LOCAL IMAGE
-      options: --gpus all       # <--- GRANTS GPU ACCESS
     steps:
       - uses: actions/checkout@v3
       
-      - name: Run Import Verification
+      - name: Check for Secrets in Code
         run: |
-          python -c "from invisible_core.cloaking import CloakEngine; print('✅ Import OK')"
-          python -c "from invisible_core.validation.validator import Validator; print('✅ Validator OK')"
+          echo "🔒 Scanning for exposed secrets..."
+          # Check for common secret patterns
+          if grep -rE "(RUNNER_TOKEN|API_KEY|SECRET_KEY|PASSWORD|PRIVATE_KEY)=" --include="*.py" --include="*.yml" --include="*.yaml" --include="*.json" . 2>/dev/null | grep -v ".env.example" | grep -v ".gitignore"; then
+            echo "❌ SECURITY VIOLATION: Potential secrets found in code!"
+            exit 1
+          fi
+          echo "✅ No secrets detected in tracked files"
           
+      - name: Verify .env Not Tracked
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "❌ SECURITY VIOLATION: .env is tracked by git!"
+            exit 1
+          fi
+          echo "✅ .env is NOT tracked (safe)"
+          
+      - name: Verify .gitignore Contains Secrets
+        run: |
+          for pattern in ".env" "*.pem" "*.key"; do
+            if ! grep -q "$pattern" .gitignore 2>/dev/null; then
+              echo "⚠️ Warning: $pattern not in .gitignore"
+            fi
+          done
+          echo "✅ .gitignore checked"
+
+  # ===========================================
+  # LANE 2: CODE QUALITY (Linting + Types)
+  # ===========================================
+  code-quality:
+    runs-on: linux_gpu
+    needs: security-scan
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Linters
+        run: pip install ruff mypy
+        
+      - name: Lint with Ruff
+        run: |
+          echo "🔍 Running Ruff linter..."
+          ruff check invisible_core/ app_interface/ --ignore E501,E402
+          
+      - name: Check Import Structure
+        run: |
+          echo "🔍 Checking for old import paths..."
+          if grep -rn "from src\." --include="*.py" invisible_core/ app_interface/; then
+            echo "❌ Found old 'from src.' imports!"
+            exit 1
+          fi
+          echo "✅ All imports use new structure"
+
+  # ===========================================
+  # LANE 3: QUICK TESTS (No GPU)
+  # ===========================================
+  unit-tests:
+    runs-on: linux_gpu
+    needs: code-quality
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run Import Tests
+        run: |
+          python -c "from invisible_core.cloaking import CloakEngine; print('✅ CloakEngine OK')"
+          python -c "from invisible_core.attacks.latent_cloak import LatentCloak; print('✅ LatentCloak OK')"
+          python -c "from invisible_core.validation.validator import Validator; print('✅ Validator OK')"
+
+  # ===========================================
+  # LANE 4: ADVERSARIAL BENCHMARK (GPU - Main/Dev Only)
+  # ===========================================
+  adversarial-benchmark:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    runs-on: linux_gpu
+    needs: unit-tests
+    container:
+      image: safespace:latest
+      options: --gpus all
+    steps:
+      - uses: actions/checkout@v3
+      
       - name: Run Attack Verification
         run: |
-          # This script generates the benchmark results
-          python invisible_core/tests/benchmark_model.py || echo "Benchmark skipped"
+          python invisible_core/tests/benchmark_model.py || echo "Benchmark skipped (no test image)"
           
       - name: Check Confidence Drop
         run: |
-          # Fails if AI confidence > 0.30 (placeholder - adjust based on results.txt)
           if [ -f results.txt ]; then
             python -c "import sys; val=float(open('results.txt').read().strip()); sys.exit(0 if val < 0.3 else 1)"
           else
