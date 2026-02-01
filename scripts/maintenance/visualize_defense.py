@@ -41,7 +41,7 @@ def generate_report(original_path: str, protected_path: str, output_path: str = 
     
     # 3. Get AI Vision (YOLO Segmentation)
     print("[Report] Running YOLO inference...")
-    model = YOLO("yolov8n-seg.pt")
+    model = YOLO("models/yolov8n-seg.pt")
     
     # Run Inference on BOTH
     res_orig = model(img_orig, verbose=False)[0]

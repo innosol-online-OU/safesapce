@@ -769,7 +769,7 @@ class LatentCloak:
         
         try:
             from ultralytics import YOLO
-            yolo_model = YOLO("yolov8n-seg.pt")
+            yolo_model = YOLO("models/yolov8n-seg.pt")
             results = yolo_model(original_pil, verbose=False)
             
             person_mask = None

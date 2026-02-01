@@ -14,7 +14,7 @@ def test_chimera():
         from ultralytics import YOLO
         print("Ultralytics imported successfully.")
         
-        model_path = "yolov8n-seg.pt"
+        model_path = "models/yolov8n-seg.pt"
         if not os.path.exists(model_path):
             print(f"Downloading model to {model_path}...")
             # YOLO class usually auto-downloads, but let's see.

@@ -36,7 +36,7 @@ class TextInjector:
         
         try:
             # Try loading typical fonts
-            font_path = "/app/OpenSans-Bold.ttf"
+            font_path = "/app/app_interface/assets/OpenSans-Bold.ttf"
             font = ImageFont.truetype(font_path, font_size)
         except:
             try:

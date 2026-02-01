@@ -6,7 +6,7 @@ urls = [
     "https://github.com/google/fonts/raw/main/apache/robotoslab/RobotoSlab-Bold.ttf",
     "https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf"  # Fallback
 ]
-dest = "OpenSans-Bold.ttf" # Keep name for simplicity in other files
+dest = "app_interface/assets/OpenSans-Bold.ttf" # Keep name for simplicity in other files
 
 for url in urls:
     try:
