@@ -26,7 +26,7 @@ docker exec -it safespace-app jupyter notebook --ip=0.0.0.0 --port=8888 --allow-
 
 ```python
 # 1. Setup
-from src.core.protocols.latent_cloak import LatentCloak
+from invisible_core.attacks.latent_cloak import LatentCloak
 import numpy as np
 import matplotlib.pyplot as plt
 
