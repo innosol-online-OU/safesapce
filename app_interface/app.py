@@ -1166,7 +1166,7 @@ if st.session_state.history:
             
             @st.cache_resource
             def load_yolo():
-                return YOLO("yolov8n-seg.pt")
+                return YOLO("models/yolov8n-seg.pt")
             
             model = load_yolo()
             

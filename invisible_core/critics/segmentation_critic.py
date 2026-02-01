@@ -36,7 +36,7 @@ class SegmentationCritic:
         logger.info("[SegmentationCritic] Loading YOLOv8n-seg (6MB)...")
         try:
             from ultralytics import YOLO
-            self.model = YOLO("yolov8n-seg.pt")
+            self.model = YOLO("models/yolov8n-seg.pt")
             # Move to device and set to eval mode
             self.model.to(self.device)
             self.loaded = True
