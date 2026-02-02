@@ -5,7 +5,6 @@ Attacks the CONCEPT of identity, not just shape/texture.
 """
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from invisible_core.logger import logger

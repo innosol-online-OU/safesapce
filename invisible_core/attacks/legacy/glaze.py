@@ -1,11 +1,9 @@
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as T
 import timm
 from PIL import Image
-import numpy as np
 
 class GlazeCloak:
     """
@@ -38,7 +36,8 @@ class GlazeCloak:
                 self.model.eval()
                 self.model_loaded = True
                 self.features_only = False
-            except:
+                self.features_only = False
+            except Exception:
                 self.model_loaded = False
         else:
             self.features_only = True
@@ -82,7 +81,8 @@ class GlazeCloak:
         alien_style_input = torch.randn_like(original_tensor).to(self.device)
         
         alien_features = self.model(alien_style_input)
-        if not isinstance(alien_features, list): alien_features = [alien_features]
+        if not isinstance(alien_features, list):
+            alien_features = [alien_features]
         
         target_grams = [self.gram_matrix(f).detach() for f in alien_features]
 
@@ -92,7 +92,8 @@ class GlazeCloak:
                 adv_input = original_tensor + delta
                 
                 features = self.model(adv_input)
-                if not isinstance(features, list): features = [features]
+                if not isinstance(features, list):
+                    features = [features]
                 
                 style_loss = 0
                 for ft, tg in zip(features, target_grams):

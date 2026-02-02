@@ -3,9 +3,6 @@ Project Invisible - Streamlit Dashboard
 AI Identity Defense Command Center
 """
 import streamlit as st
-import streamlit.elements.image as st_image
-import streamlit.runtime as st_runtime
-from io import BytesIO
 import sys
 from invisible_core.session_manager import LiveSessionManager
 from app_interface.views.live_dashboard import render_live_dashboard
@@ -24,7 +21,7 @@ def load_face_analysis():
     import insightface
     try:
         app = insightface.app.FaceAnalysis(name='buffalo_l', providers=['CUDAExecutionProvider'])
-    except:
+    except Exception:
         app = insightface.app.FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
     app.prepare(ctx_id=0, det_size=(640, 640))
     return app
@@ -34,9 +31,7 @@ def load_face_analysis():
 
 
 import os
-import sys
 import uuid
-import json
 import numpy as np
 from PIL import Image
 
@@ -45,7 +40,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from invisible_core.cloaking import CloakEngine
 
 from streamlit_drawable_canvas import st_canvas
-import streamlit_drawable_canvas
 
 
 # ==================== PAGE CONFIG ====================
@@ -617,7 +611,8 @@ with col1:
                             st.success(f"Detected {len(detections)} targets!")
                         else:
                             st.warning("No targets detected.")
-                        if os.path.exists(temp_path): os.remove(temp_path)
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
                 with col_i2:
                     if st.button("🗑️ Clear Mask"):
                         st.session_state.pop('auto_target_data', None)
@@ -757,7 +752,8 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                      
                      # Validation Callback
                      def validate_api(pil_img, ref_img=None):
-                         import uuid, os
+                         import uuid
+                         import os
                          critic = get_qwen_critic()
                          
                          tmp_probe = f"tmp_prb_{uuid.uuid4().hex}.png"
@@ -775,8 +771,10 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                          except Exception as e:
                              return f"Error: {str(e)}"
                          finally:
-                             if os.path.exists(tmp_probe): os.remove(tmp_probe)
-                             if os.path.exists(tmp_ref): os.remove(tmp_ref)
+                             if os.path.exists(tmp_probe):
+                                 os.remove(tmp_probe)
+                             if os.path.exists(tmp_ref):
+                                 os.remove(tmp_ref)
                              
                      live_manager = get_live_manager()
                      live_manager.init_session(engine.get_ghost_mesh_optimizer(), live_params, validator_fn=validate_api)
@@ -940,7 +938,7 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                             
                             # Combined legend
                             lines = [line1, line2]
-                            labels = [l.get_label() for l in lines]
+                            labels = [line.get_label() for line in lines]
                             ax2.legend(lines, labels, loc='upper left', facecolor='#1e1e24', edgecolor='white', labelcolor='white')
                             
                             plt.tight_layout()
@@ -1004,7 +1002,7 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                                 spine.set_color('gray')
                             
                             lines = [line1, line2]
-                            labels = [l.get_label() for l in lines]
+                            labels = [line.get_label() for line in lines]
                             ax2.legend(lines, labels, loc='upper left', facecolor='#1e1e24', edgecolor='white', labelcolor='white')
                             
                             plt.tight_layout()
@@ -1071,7 +1069,7 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                         {'🧠 Neural Stego: ON' if use_neural_stego else ''}
                         """
                     elif is_phantom:
-                        frontier_msg = f"""
+                        frontier_msg = """
                         👻 <strong>PHANTOM PIXEL</strong><br>
                         SigLIP + JND Stealth<br>
                         Steps: 40 (Precision)<br>
@@ -1122,7 +1120,7 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                  if mask_to_load:
                      try:
                         st.session_state.history[-1]["mask"] = Image.open(mask_to_load).copy()
-                     except:
+                     except Exception:
                         pass
                  if len(st.session_state.history) > 5:
                      st.session_state.history.pop(0)

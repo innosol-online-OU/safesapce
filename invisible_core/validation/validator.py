@@ -3,7 +3,6 @@ import os
 import torch
 import numpy as np
 from PIL import Image
-import cv2
 import warnings
 
 # Suppress heavy warnings
@@ -12,7 +11,7 @@ warnings.filterwarnings("ignore")
 try:
     import lpips
     from deepface import DeepFace
-    from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
+    from transformers import CLIPProcessor, CLIPModel
 except ImportError:
     print("Warning: Validator dependencies missing (lpips, deepface, transformers).")
 
@@ -117,7 +116,8 @@ class Validator:
         # OpenAI CLIP logits are scaled cosine.
         # Let's treat raw score drop.
         
-        if sim1 == 0: return 0.0
+        if sim1 == 0:
+            return 0.0
         pct_drop = ((sim1 - sim2) / sim1) * 100
         return pct_drop
 

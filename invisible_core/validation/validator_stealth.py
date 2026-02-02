@@ -1,7 +1,6 @@
 
 import torch
 import cv2
-import numpy as np
 import argparse
 from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
@@ -24,7 +23,7 @@ class StealthValidator:
         with torch.no_grad():
             outputs = self.clip_model(**inputs)
             # logits_per_image is proportional to cosine similarity
-            logits_per_image = outputs.logits_per_image # this is (N, 1)
+            # logits_per_image = outputs.logits_per_image # this is (N, 1)
             # OpenAI clip usually outputs un-normalized logits which are scaled cosine similarities.
             # To get raw cosine similarity, we can do manual:
             image_features = outputs.image_embeds / outputs.image_embeds.norm(dim=-1, keepdim=True)

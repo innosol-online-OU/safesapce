@@ -2,8 +2,6 @@
 import os
 import requests
 import base64
-from io import BytesIO
-from PIL import Image
 import gc
 
 class QwenCritic:
@@ -38,17 +36,17 @@ class QwenCritic:
                  self.loaded = True # Virtual load
              else:
                  print("[QwenCritic] LM Studio not found. Using Local Model.")
-        except:
+        except Exception:
              print("[QwenCritic] LM Studio not reachable. Using Local Model.")
 
     def load(self):
-        if self.loaded: return
+        if self.loaded:
+            return
         
         # Fallback to Local Transformer
         print("[QwenCritic] Initializing Local Qwen2.5-VL-3B (4-bit)...")
         try:
             from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, BitsAndBytesConfig
-            from qwen_vl_utils import process_vision_info
             
             import torch
             # Low VRAM Config: 4-bit NF4
@@ -75,7 +73,8 @@ class QwenCritic:
             
     def unload(self):
         """Free VRAM when not in use"""
-        if self.use_api: return 
+        if self.use_api:
+            return 
         
         if self.model:
             del self.model
@@ -92,8 +91,10 @@ class QwenCritic:
             print("[QwenCritic] Model Unloaded.")
 
     def critique(self, image_path: str, target_name: str = "Elon Musk") -> tuple[bool, str, float]:
-        if not self.loaded and not self.use_api: self.load()
-        if not self.loaded and not self.use_api: return True, "Validator Failed to Load", 0.0
+        if not self.loaded and not self.use_api:
+            self.load()
+        if not self.loaded and not self.use_api:
+            return True, "Validator Failed to Load", 0.0
         
         # Phase 12: Cognitive Interview Prompt
         prompt = (
@@ -204,14 +205,18 @@ class QwenCritic:
         try:
             lines = output_text.strip().split('\n')
             for line in lines:
-                if "Identity:" in line: metrics["identity"] = line.split("Identity:", 1)[1].strip()
+                if "Identity:" in line:
+                    metrics["identity"] = line.split("Identity:", 1)[1].strip()
                 if "Confidence:" in line: 
                     # Extract number
                     import re
                     match = re.search(r"(\d+)", line)
-                    if match: metrics["confidence"] = int(match.group(1))
-                if "Artifacts:" in line: metrics["artifacts"] = line.split("Artifacts:", 1)[1].strip()
-                if "Realism:" in line: metrics["realism"] = line.split("Realism:", 1)[1].strip()
+                    if match:
+                        metrics["confidence"] = int(match.group(1))
+                if "Artifacts:" in line:
+                    metrics["artifacts"] = line.split("Artifacts:", 1)[1].strip()
+                if "Realism:" in line:
+                    metrics["realism"] = line.split("Realism:", 1)[1].strip()
         except Exception as e:
             print(f"[QwenCritic] Parsing Error: {e}")
             
@@ -239,8 +244,10 @@ class QwenCritic:
         Returns:
            (passed, reason, similarity_score)
         """
-        if not self.loaded and not self.use_api: self.load()
-        if not self.loaded and not self.use_api: return True, "Validator Failed to Load", 0.0
+        if not self.loaded and not self.use_api:
+            self.load()
+        if not self.loaded and not self.use_api:
+            return True, "Validator Failed to Load", 0.0
         
         prompt = (
             "Biometric Verification Task:\n"
@@ -266,7 +273,8 @@ class QwenCritic:
              try:
                 # Encode Both
                 def enc(p):
-                    with open(p, "rb") as f: return base64.b64encode(f.read()).decode('utf-8')
+                    with open(p, "rb") as f:
+                        return base64.b64encode(f.read()).decode('utf-8')
                 
                 b64_ref = enc(reference_path)
                 b64_probe = enc(probe_path)
@@ -351,14 +359,16 @@ class QwenCritic:
             for line in lines:
                 if "Match:" in line: 
                     val = line.split("Match:", 1)[1].strip().lower()
-                    if "yes" in val: is_match = True
+                    if "yes" in val:
+                        is_match = True
                 if "Confidence:" in line:
                     import re
                     match = re.search(r"(\d+)", line)
-                    if match: confidence = int(match.group(1))
+                    if match:
+                        confidence = int(match.group(1))
                 if "Manipulation:" in line:
                     manipulation = line.split("Manipulation:", 1)[1].strip()
-        except:
+        except Exception:
             pass
             
         print(f"[QwenCritic] Pairwise Result: Match={is_match}, Conf={confidence}%, Man={manipulation}")

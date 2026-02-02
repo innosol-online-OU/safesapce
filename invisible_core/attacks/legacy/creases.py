@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 from PIL import Image
-import numpy as np
 
 class CreasesTransformer:
     """

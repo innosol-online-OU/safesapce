@@ -1,6 +1,5 @@
-import random
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont, ImageChops, ImageEnhance
+from PIL import Image, ImageDraw, ImageFont
 
 class TextInjector:
     PAYLOADS = [
@@ -38,10 +37,10 @@ class TextInjector:
             # Try loading typical fonts
             font_path = "/app/app_interface/assets/OpenSans-Bold.ttf"
             font = ImageFont.truetype(font_path, font_size)
-        except:
+        except Exception:
             try:
                 font = ImageFont.truetype("arial.ttf", font_size)
-            except:
+            except Exception:
                 font = ImageFont.load_default()
 
         # Draw diagonal/grid pattern

@@ -6,12 +6,10 @@ Phase 2 Update: Ensemble attacks, DWT-Mamba loss, Neural Steganography
 import torch
 import numpy as np
 import cv2
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 import os
-from typing import Optional, List, Union, Literal
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from invisible_core.logger import logger  # Added Logger
-import pywt
 from invisible_core.util.ssim_loss import SSIMLoss
 import gc # Phase 15.3 Resource Management
 
@@ -75,10 +73,8 @@ class ProtectionConfig:
         return self.target_profile == 'frontier' or self.defense_mode == 'aggressive'
 
 try:
-    import insightface
     from insightface.app import FaceAnalysis
     # SigLIP dependency
-    import timm
 except ImportError:
     logger.warning("Warning: InsightFace/Timm not found. LatentCloak will fail.")
     FaceAnalysis = None
@@ -167,7 +163,8 @@ class LatentCloak:
         
     def _load_detectors(self):
         """Phase 15.1: Lazy load only the lightweight face detector."""
-        if self.detectors_loaded: return
+        if self.detectors_loaded:
+            return
         
         try:
             logger.info("[LatentCloak] Loading Face Detectors (Lightweight)...")
@@ -224,7 +221,6 @@ class LatentCloak:
         self.models_loaded = False
         
         # 3. Force GC
-        import gc
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -307,12 +303,15 @@ class LatentCloak:
             user_mask: Optional user-drawn mask (numpy array) for targeted destruction
         """
         logger.info(f"[LatentCloak] Protect called on {image_path}...")
-        if not self.models_loaded: return Image.open(image_path)
-        if config is None: config = ProtectionConfig()
+        if not self.models_loaded:
+            return Image.open(image_path)
+        if config is None:
+            config = ProtectionConfig()
             
         original_pil = Image.open(image_path).convert("RGB")
         crop_pil, bbox, face_mask_np = self.detect_and_crop(original_pil)
-        if not crop_pil: return original_pil
+        if not crop_pil:
+            return original_pil
         
         # Dynamic parameter mapping based on strength
         t = config.strength / 100.0  # 0-1
@@ -339,7 +338,7 @@ class LatentCloak:
         # Handle user-drawn mask (if provided)
         user_mask_tensor = None
         if user_mask is not None:
-            logger.info(f"[LatentCloak] User mask detected! Applying targeted destruction...")
+            logger.info("[LatentCloak] User mask detected! Applying targeted destruction...")
             # Resize user mask to 64x64 for latent space
             if user_mask.shape[:2] != (512, 512):
                 user_mask = cv2.resize(user_mask.astype(np.float32), (512, 512), interpolation=cv2.INTER_LINEAR)
@@ -735,12 +734,7 @@ class LatentCloak:
         )
         
         # --- PHASE 10 PARAMETERS ---
-        num_steps = 60          # Slower convergence for cleaner visuals
-        target_identity = "Elon Musk"
-        
         # Adaptive Epsilon Limits
-        eps_smooth = 0.02       # Max perturbation on skin (invisible)
-        eps_texture = 0.20      # Max perturbation on hair/edges (aggressive)
         
         # Load image
         original_pil = Image.open(image_path).convert("RGB")
@@ -779,8 +773,10 @@ class LatentCloak:
                     if cls == 0: # Person
                         m = results[0].masks.data[i].cpu().numpy()
                         m = cv2.resize(m, (W, H), interpolation=cv2.INTER_NEAREST)
-                        if person_mask is None: person_mask = m
-                        else: person_mask = np.maximum(person_mask, m)
+                        if person_mask is None:
+                            person_mask = m
+                        else:
+                            person_mask = np.maximum(person_mask, m)
             
             if person_mask is not None:
                 pm_tensor = torch.tensor(person_mask, device=self.device).float().unsqueeze(0).unsqueeze(0)
@@ -829,8 +825,8 @@ class LatentCloak:
                  logger.warning("[LatentCloak] No person detected. Using Center Fallback.")
                  if user_mask is None:
                      # Create generic oval mask in center
-                     center_y1, center_x1 = H // 4, W // 4
-                     center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+                     # center_y1, center_x1 = H // 4, W // 4
+                     # center_y2, center_x2 = H * 3 // 4, W * 3 // 4
                      # Create oval mask using indices
                      y_idx = torch.linspace(-1, 1, H).view(H, 1).to(self.device)
                      x_idx = torch.linspace(-1, 1, W).view(1, W).to(self.device)
@@ -930,8 +926,9 @@ class LatentCloak:
         
         # --- PHASE 12.5: DYNAMIC ADAPTIVE TEXTURE (MI-FGSM) ---
         
-        # 0. Parse Config
-        steps = config.optimization_steps if config else 30
+        if config is None:
+             config = ProtectionConfig()
+        # steps = config.optimization_steps if config else 30
         strength_mult = (config.strength / 50.0) if config else 1.0
         
         # 1. Generate Roughness Map (Sensitivity Map)
@@ -977,7 +974,9 @@ class LatentCloak:
         
         # --- STEP 3: INITIALIZE CRITICS ---
         CLIPCritic = _get_clip_critic()
-        clip_critic = CLIPCritic(device=self.device, target_text=target_identity)
+        # Use default target if undefined
+        target_text = "Elon Musk" 
+        clip_critic = CLIPCritic(device=self.device, target_text=target_text)
         
         ssim_loss_fn = SSIMLoss(window_size=11).to(self.device)
         
@@ -1172,7 +1171,6 @@ class LatentCloak:
         """
         self._load_optimizer()
         import torch.nn.functional as F
-        import torch.optim as optim
         import numpy as np
         
         # 1. Config & Preprocessing
@@ -1187,7 +1185,7 @@ class LatentCloak:
         if resolution != "Original":
             try:
                 res_val = int(resolution)
-            except: 
+            except Exception: 
                 pass
         
         # Load Image
@@ -1291,7 +1289,8 @@ class LatentCloak:
             loss.backward()
             
             # Momentum
-            if delta.grad is None: continue
+            if delta.grad is None:
+                continue
             grad = delta.grad.data
             grad_norm = torch.norm(grad, p=1)
             grad = grad / (grad_norm + 1e-10)
@@ -1656,7 +1655,8 @@ class LatentCloak:
         # TV: Keep constant or reduce at high strength to allow wilder warps?
         # User feedback: "Higher strength = lower changes" -> TV was overpowering.
         # Fix: effective_tv = tv_weight (constant)
-        effective_tv = tv_weight 
+        # effective_tv = tv_weight 
+        pass 
         
         logger.info(f"[LiquidWarp V2d] Steps: {num_steps} | Grid: {grid_size}x{grid_size} | Identity*25 | TV*0.01 | Vert*10 | FocalBias: True")
         
@@ -1744,7 +1744,7 @@ class LatentCloak:
             metrics_history['vertical_loss'].append(vertical_loss.item())
             
             if step % 10 == 0:
-                pixel_diff = (warped - img_tensor).abs().mean().item()
+                # pixel_diff = (warped - img_tensor).abs().mean().item()
                 print(f"LiquidV2d Step {step}/{num_steps} | AvgSim: {avg_sim.item():.4f} | TV: {tv_loss.item():.4f} | DispMax: {disp_max:.6f} | VertLoss: {vertical_loss.item():.6f}", flush=True)
         
         # 4. Finalize with best displacement

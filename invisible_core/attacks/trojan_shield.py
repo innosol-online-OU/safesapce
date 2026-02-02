@@ -1,8 +1,5 @@
 
 from PIL import Image, ImageDraw, ImageFont
-import numpy as np
-import random
-import os
 
 class TrojanShield:
     """
@@ -25,10 +22,10 @@ class TrojanShield:
         try:
             # Linux path often has DejaVuSans or similar
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
-        except:
+        except Exception:
             try:
                  font = ImageFont.truetype("arial.ttf", font_size)
-            except:
+            except Exception:
                  font = ImageFont.load_default()
         
         # Strategy: Tiling (Watermark Style)
@@ -40,7 +37,7 @@ class TrojanShield:
             bbox = draw.textbbox((0, 0), message, font=font)
             text_w = bbox[2] - bbox[0]
             text_h = bbox[3] - bbox[1]
-        except:
+        except Exception:
              # Fallback for older Pillow
              text_w = font_size * len(message) * 0.5
              text_h = font_size * 1.5
@@ -85,10 +82,10 @@ class TrojanShield:
         try:
              # Try Linux path first (common in Docker)
              font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
-        except:
+        except Exception:
              try:
                  font = ImageFont.truetype("arialbd.ttf", font_size)
-             except:
+             except Exception:
                  font = ImageFont.load_default()
         
         # Calculate Text Size
@@ -96,7 +93,7 @@ class TrojanShield:
             bbox = draw.textbbox((0, 0), payload, font=font)
             text_w = bbox[2] - bbox[0]
             text_h = bbox[3] - bbox[1]
-        except:
+        except Exception:
             text_w = font_size * len(payload) * 0.6
             text_h = font_size * 1.5
             

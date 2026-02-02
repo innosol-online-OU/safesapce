@@ -5,11 +5,10 @@ not just LSB encoding. This makes the payload more robust to compression.
 """
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from PIL import Image
-from typing import Optional, Tuple, Dict
+from typing import Dict
 from dataclasses import dataclass
 import hashlib
 
@@ -225,7 +224,7 @@ class LSBEncoder:
             length = int(length_bits, 2)
             if length > 1000:  # Sanity check
                 return ""
-        except:
+        except Exception:
             return ""
             
         # Read message

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from math import exp, sqrt
+from math import exp
 
 class SSIMLoss(nn.Module):
     """

@@ -1,5 +1,4 @@
 
-import streamlit as st
 from PIL import Image
 from typing import Dict, Any, Optional, List
 import time
@@ -75,7 +74,8 @@ class LiveSessionManager:
                      self._auto_validated = True
 
                 # Keep buffer small? 
-                if len(self._logs) > 1000: self._logs.pop(0)
+                if len(self._logs) > 1000:
+                    self._logs.pop(0)
             except Exception:
                 pass
                 
@@ -92,7 +92,8 @@ class LiveSessionManager:
             return None
             
         img = self.get_current_image()
-        if not img: return
+        if not img:
+            return
         
         # Get reference for pairwise comparison
         ref = self.get_original_image()
@@ -172,12 +173,12 @@ class LiveSessionManager:
         
     def get_components(self) -> Dict[str, Any]:
         """Get visualization components (Noise, Warp)."""
-        if not self._state: return {}
+        if not self._state:
+            return {}
         
         results = {}
         import torch
         import numpy as np
-        from PIL import Image
         
         # 1. Noise Map (Absolute intensity)
         # 1. Noise Map (Absolute intensity)
@@ -219,7 +220,8 @@ class LiveSessionManager:
     def get_current_image_bytes(self):
         """Get current image as PNG bytes for download."""
         img = self.get_current_image()
-        if not img: return None
+        if not img:
+            return None
         from io import BytesIO
         b = BytesIO()
         img.save(b, format="PNG")

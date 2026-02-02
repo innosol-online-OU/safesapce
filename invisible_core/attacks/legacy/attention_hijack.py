@@ -1,9 +1,7 @@
 
 import torch
-import torch.nn as nn
 import timm
 from PIL import Image
-import numpy as np
 import torchvision.transforms as T
 
 class AttentionHijacker:
@@ -70,7 +68,7 @@ class AttentionHijacker:
         # Hook to capture attention weights
         # Disclaimer: actual hooking depends heavily on specific timm model structure.
         # This is a conceptual implementation assuming we can access attention.
-        attention_scores = []
+        # attention_scores = []
         def attn_hook(module, input, output):
             # output might be (B, N, N) attention matrix or tuple
             # We assume standard attention map (Batch, Heads, Tokens, Tokens)

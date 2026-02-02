@@ -19,8 +19,7 @@ import torch.nn.functional as F
 import numpy as np
 import cv2
 from PIL import Image
-from typing import Tuple, Dict, Optional, Union
-import os
+from typing import Tuple, Dict, Union
 
 from invisible_core.logger import logger
 
@@ -374,7 +373,7 @@ class GhostMeshOptimizer(nn.Module):
                         face_mask[0, 0] = torch.maximum(face_mask[0, 0], mask_f)
                 else:
                     face_mask.fill_(1.0) # Fallback to full image
-            except:
+            except Exception:
                 face_mask.fill_(1.0)
         else:
             face_mask.fill_(1.0)
@@ -538,7 +537,7 @@ class GhostMeshOptimizer(nn.Module):
                         semantic_landmarks[:, 0] /= W
                         semantic_landmarks[:, 1] /= H
                         logger.info("GhostMesh: Semantic Landmarks Extracted.")
-            except:
+            except Exception:
                 pass
         
         # Generate masks (T-Zone, Face Mask, JND)

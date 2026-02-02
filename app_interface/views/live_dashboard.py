@@ -76,13 +76,25 @@ def render_live_dashboard(manager):
         c1, c2, c3, c4 = st.columns(4)
         # Re-implement buttons...
         if status == "RUNNING":
-            if c1.button("⏸️ PAUSE"): manager.pause(); st.rerun()
-            if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+            if c1.button("⏸️ PAUSE"):
+                manager.pause()
+                st.rerun()
+            if c4.button("🛑 STOP"):
+                manager.stop()
+                st.rerun()
         elif status == "PAUSED":
-            if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
-            if c2.button("👟 STEP"): manager.step(1); st.rerun()
-            if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
-            if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+            if c1.button("▶️ RESUME"):
+                manager.resume()
+                st.rerun()
+            if c2.button("👟 STEP"):
+                manager.step(1)
+                st.rerun()
+            if c3.button("🔍 CHECK"):
+                manager.trigger_validation()
+                st.rerun()
+            if c4.button("🛑 STOP"):
+                manager.stop()
+                st.rerun()
         elif status in ["COMPLETED", "STOPPED"]:
             st.success("Sequence Complete.")
             if st.button("🔄 NEW RUN"): 
@@ -131,9 +143,13 @@ def render_live_dashboard(manager):
                 ax.set_ylim(-0.05, 1.05) if 'cossim' in metrics else None
                 ax.grid(color='#374151', linestyle=':', linewidth=0.5)
                 # Spines
-                for s in ax.spines.values(): s.set_visible(False)
-                ax.spines['left'].set_visible(True); ax.spines['left'].set_color('#374151')
-                ax.spines['bottom'].set_visible(True); ax.spines['bottom'].set_color('#374151')
+                # Spines
+                for s in ax.spines.values():
+                    s.set_visible(False)
+                ax.spines['left'].set_visible(True)
+                ax.spines['left'].set_color('#374151')
+                ax.spines['bottom'].set_visible(True)
+                ax.spines['bottom'].set_color('#374151')
                 
                 st.pyplot(fig)
                 plt.close(fig)

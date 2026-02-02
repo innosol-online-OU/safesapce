@@ -5,10 +5,8 @@ Lightweight alternative to heavy SD ensemble (~6MB vs ~5GB VRAM).
 """
 
 import torch
-import torch.nn as nn
 import numpy as np
-from PIL import Image
-from typing import Optional, Tuple
+from typing import Optional
 from invisible_core.logger import logger
 
 

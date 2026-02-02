@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import random
-from typing import List, Optional, Tuple, Dict
+from typing import List, Tuple, Dict
 from dataclasses import dataclass
 
 # CVE-2025-32434 bypass for trusted models
@@ -89,7 +89,7 @@ class SurrogateModel:
             # Move to CPU first (sometimes helps with VRAM release)
             try:
                 self.model.cpu()
-            except:
+            except Exception:
                 pass
             del self.model
             self.model = None
@@ -101,7 +101,7 @@ class SurrogateModel:
         if self.feature_extractor is not None:
             try:
                 self.feature_extractor.cpu()
-            except:
+            except Exception:
                 pass
             del self.feature_extractor
             self.feature_extractor = None
@@ -125,7 +125,7 @@ class SurrogateModel:
         """Cleanup on deletion."""
         try:
             self.unload()
-        except:
+        except Exception:
             pass
 
 

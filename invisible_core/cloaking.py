@@ -10,15 +10,13 @@ except Exception:
 from PIL import Image, ImageChops, ImageEnhance
 import numpy as np
 import os
-import uuid
-import json
 try:
     from skimage.metrics import structural_similarity as ssim_metric
 except ImportError:
     ssim_metric = None
     ssim_metric = None
 
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Dict, Tuple, Optional
 class CloakEngine:
     def __init__(self):
         # Cache for Project Invisible models
@@ -30,7 +28,7 @@ class CloakEngine:
     def get_ghost_mesh_optimizer(self):
         """Lazy load and return the GhostMesh optimizer."""
         if self.latent_cloak is None:
-             print(f"[CloakEngine] Initializing LatentCloak for GhostMesh (Lazy)...")
+             print("[CloakEngine] Initializing LatentCloak for GhostMesh (Lazy)...")
              from invisible_core.attacks.latent_cloak import LatentCloak
              self.latent_cloak = LatentCloak(lite_mode=True)
         
@@ -126,9 +124,8 @@ class CloakEngine:
                 
                 # SPEED OPTIMIZATION: Check if Qwen uses API mode (no local VRAM needed)
                 from invisible_core.critics.qwen_critic import QwenCritic
-                test_critic = QwenCritic()
-                qwen_uses_api = test_critic.use_api
-                del test_critic
+                # Just checking API status without assigning to unused var
+                QwenCritic()
                 
                 # Load LatentCloak ONCE (Performance Fix)
                 # PHASE 4 LITE: Use lite_mode to skip heavy SD loading for Frontier
@@ -241,7 +238,7 @@ class CloakEngine:
                             mask_blur=l_blur
                         )
                     elif is_liquid_v2:
-                        print(f"[CloakEngine] PHASE 17.9d: Using Liquid Warp V2 (Focal Length Attack)...")
+                        print("[CloakEngine] PHASE 17.9d: Using Liquid Warp V2 (Focal Length Attack)...")
                         img, warp_metrics = self.latent_cloak.protect_liquid_warp_v2(
                             input_path,
                             strength=p_strength,
@@ -419,15 +416,14 @@ class CloakEngine:
                 metrics["Layers Applied"].append(visual_mode)
                 metrics["Configuration"] = f"Strength: {current_strength} | Face Boost: {'ON' if face_boost else 'OFF'}"
                 metrics["Adversarial Validation"] = "Passed (Qwen-VL Approved)" if passed else f"Failed ({reason})"
-            if compliance: metrics["Layers Applied"].append("Stego-Compliance")
+            if compliance:
+                metrics["Layers Applied"].append("Stego-Compliance")
 
             return True, heatmap_path, metrics
             
             
         except Exception as e:
             print(f"Error applying defense: {e}")
-            import traceback
-            traceback.print_exc()
             import traceback
             traceback.print_exc()
             return False, None, {"error": str(e)}
