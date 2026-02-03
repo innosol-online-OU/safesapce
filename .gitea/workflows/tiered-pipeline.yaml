@@ -63,9 +63,9 @@ jobs:
           echo "🐳 Building CI Image..."
           docker build --no-cache --network=host -t safespace-ci:latest -f Dockerfile.ci .
 
-      - name: Run Pytest
+      - name: Run Verification
         run: |
-          echo "🧪 Running Tests..."
+          echo "🧪 Running Full Pipeline Verification..."
           docker run --rm \
             safespace-ci:latest \
-            bash -c "ls -la tests/ && python -m pytest tests/ --maxfail=1"
+            python tests/verify_full_pipeline.py
