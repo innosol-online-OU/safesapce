@@ -1,0 +1,51 @@
+name: "Tiered AI Pipeline"
+
+on:
+  push:
+    branches: [main, dev]
+    # Trigger 7: Manual Checkout
+
+jobs:
+  fast-feedback:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Manual Checkout
+        run: |
+          echo "⬇️ Cloning repository manually..."
+          git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
+          echo "✅ Checkout complete"
+          
+      - name: Security Scan
+        run: |
+          echo "🔒 Scanning for exposed secrets..."
+          if grep -rE "(RUNNER_TOKEN|API_KEY|SECRET_KEY|PASSWORD|PRIVATE_KEY)=" --include="*.py" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -v ".env.example" | grep -v ".gitignore"; then
+            echo "❌ SECURITY VIOLATION: Secrets found!"
+            exit 1
+          fi
+          echo "✅ No secrets detected"
+          
+      - name: Verify .env Not Tracked
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "❌ SECURITY VIOLATION: .env is tracked!"
+            exit 1
+          fi
+          echo "✅ .env is NOT tracked"
+          
+      - name: Lint with Ruff
+        run: |
+          pip install ruff -q
+          ruff check invisible_core/ app_interface/ --ignore E501,E402
+          
+      - name: Check Import Structure
+        run: |
+          if grep -rn "from src\." --include="*.py" invisible_core/ app_interface/; then
+            echo "❌ Found old 'from src.' imports!"
+            exit 1
+          fi
+          echo "✅ All imports use new structure"
+
+  # Heavy job disabled for now to verify fast-feedback first
+  # heavy-validation: 
+  #   ...
