@@ -15,7 +15,20 @@ jobs:
           echo "⬇️ Cloning repository manually (Public)..."
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
           echo "✅ Checkout complete"
-          
+
+      - name: Report Status (Pending)
+        if: always() && secrets.GITHUB_MIRROR_TOKEN != ''
+        run: |
+          python scripts/ci/github_status.py \
+            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --owner "innosol-online-OU" \
+            --repo "safe-space" \
+            --sha "${{ github.sha }}" \
+            --state "pending" \
+            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
+            --context "Gitea/Fast-Feedback" \
+            --desc "Running Lint & Security Checks..."
+
       - name: Security Scan
         run: |
           echo "🔒 Scanning for exposed secrets..."
@@ -45,6 +58,33 @@ jobs:
             exit 1
           fi
           echo "✅ All imports use new structure"
+
+      - name: Report Status (Success)
+        if: success() && secrets.GITHUB_MIRROR_TOKEN != ''
+        run: |
+          python scripts/ci/github_status.py \
+            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --owner "innosol-online-OU" \
+            --repo "safe-space" \
+            --sha "${{ github.sha }}" \
+            --state "success" \
+            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
+            --context "Gitea/Fast-Feedback" \
+            --desc "All checks passed!"
+
+      - name: Report Status (Failure)
+        if: failure() && secrets.GITHUB_MIRROR_TOKEN != ''
+        run: |
+          python scripts/ci/github_status.py \
+            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --owner "innosol-online-OU" \
+            --repo "safe-space" \
+            --sha "${{ github.sha }}" \
+            --state "failure" \
+            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
+            --context "Gitea/Fast-Feedback" \
+            --desc "Checks failed. Click for logs."
+
 
   heavy-validation:
     needs: fast-feedback
