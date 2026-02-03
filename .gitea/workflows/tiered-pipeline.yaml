@@ -86,8 +86,30 @@ jobs:
             --desc "Checks failed. Click for logs."
 
 
-  heavy-validation:
+  setup-heavy-instance:
     needs: fast-feedback
+    if: success()
+    runs-on: linux_cpu_light
+    steps:
+      - name: Manual Checkout
+        run: |
+          echo "⬇️ Cloning repository manually..."
+          git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
+          
+      - name: Wake Up Heavy Server
+        env:
+          OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
+          OVH_APP_SECRET: ${{ secrets.OVH_APP_SECRET }}
+          OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+        run: |
+          echo "🚀 Waking up Heavy Instance..."
+          pip install ovh
+          python scripts/ci/ovh_controller.py start \
+            --project-id "${{ secrets.OVH_PROJECT_ID }}" \
+            --instance-id "${{ secrets.OVH_INSTANCE_ID }}"
+
+  heavy-validation:
+    needs: [fast-feedback, setup-heavy-instance]
     if: success()
     runs-on: linux_cpu_heavy
     steps:
@@ -109,3 +131,25 @@ jobs:
           docker run --rm \
             safespace-ci:latest \
             python tests/verify_full_pipeline.py
+
+  teardown-heavy-instance:
+    needs: [heavy-validation, setup-heavy-instance]
+    if: always()
+    runs-on: linux_cpu_light
+    steps:
+      - name: Manual Checkout
+        run: |
+          echo "⬇️ Cloning repository manually..."
+          git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
+
+      - name: Sleep Heavy Server
+        env:
+          OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
+          OVH_APP_SECRET: ${{ secrets.OVH_APP_SECRET }}
+          OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+        run: |
+          echo "😴 Stopping Heavy Instance..."
+          pip install ovh
+          python scripts/ci/ovh_controller.py stop \
+            --project-id "${{ secrets.OVH_PROJECT_ID }}" \
+            --instance-id "${{ secrets.OVH_INSTANCE_ID }}"
