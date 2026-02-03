@@ -61,7 +61,7 @@ jobs:
       - name: Build Test Environment
         run: |
           echo "🐳 Building CI Image..."
-          docker build -t safespace-ci:latest -f Dockerfile.ci .
+          docker build --network=host -t safespace-ci:latest -f Dockerfile.ci .
 
       - name: Run Pytest
         run: |
