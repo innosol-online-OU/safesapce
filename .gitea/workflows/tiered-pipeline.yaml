@@ -22,7 +22,7 @@ jobs:
           python scripts/ci/github_status.py \
             --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
             --owner "innosol-online-OU" \
-            --repo "safe-space" \
+            --repo "safesapce" \
             --sha "${{ github.sha }}" \
             --state "pending" \
             --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
@@ -65,7 +65,7 @@ jobs:
           python scripts/ci/github_status.py \
             --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
             --owner "innosol-online-OU" \
-            --repo "safe-space" \
+            --repo "safesapce" \
             --sha "${{ github.sha }}" \
             --state "success" \
             --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
@@ -78,7 +78,7 @@ jobs:
           python scripts/ci/github_status.py \
             --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
             --owner "innosol-online-OU" \
-            --repo "safe-space" \
+            --repo "safesapce" \
             --sha "${{ github.sha }}" \
             --state "failure" \
             --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
