@@ -18,7 +18,8 @@ jobs:
     if: github.event_name == 'push'
     runs-on: linux_cpu_light
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
+
       
       - name: Security Scan
         run: |
