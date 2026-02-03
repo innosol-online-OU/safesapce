@@ -1,0 +1,30 @@
+FROM python:3.10-slim-bookworm
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    build-essential \
+    python3-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Prepare requirements (Switch GPU packages to CPU for validation)
+COPY requirements.txt .
+RUN sed 's/onnxruntime-gpu/onnxruntime/' requirements.txt > requirements-cpu.txt
+
+# Install PyTorch CPU and dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements-cpu.txt
+
+# Copy Source Code
+COPY invisible_core/ invisible_core/
+COPY app_interface/ app_interface/
+COPY scripts/ scripts/
+COPY tests/ tests/
+
+# Set Python Path
+ENV PYTHONPATH=/app

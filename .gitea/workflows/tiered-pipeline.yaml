@@ -46,6 +46,27 @@ jobs:
           fi
           echo "✅ All imports use new structure"
 
-  # Heavy job disabled for now to verify fast-feedback first
-  # heavy-validation: 
-  #   ...
+  heavy-validation:
+    needs: fast-feedback
+    if: success()
+    runs-on: linux_cpu_heavy
+    steps:
+      - name: Manual Checkout
+        run: |
+          echo "⬇️ Cloning repository manually..."
+          git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
+          echo "✅ Checkout complete"
+
+      - name: Build Test Environment
+        run: |
+          echo "🐳 Building CI Image..."
+          docker build -t safespace-ci:latest -f Dockerfile.ci .
+
+      - name: Run Pytest
+        run: |
+          echo "🧪 Running Tests..."
+          docker run --rm \
+            -v $(pwd)/tests:/app/tests \
+            safespace-ci:latest \
+            pytest tests/ --maxfail=1
+
