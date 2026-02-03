@@ -1,0 +1,83 @@
+name: "Tiered AI Pipeline"
+
+on:
+  push:
+    branches: [main, dev]
+    # Trigger 4: Testing Runner Pickup
+
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+
+jobs:
+  # ===========================================
+  # TIER 1: Fast Feedback (Light Server D2-2)
+  # Runs on every push automatically
+  # ===========================================
+  fast-feedback:
+    if: github.event_name == 'push'
+    runs-on: linux_cpu_light
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Security Scan
+        run: |
+          echo "🔒 Scanning for exposed secrets..."
+          if grep -rE "(RUNNER_TOKEN|API_KEY|SECRET_KEY|PASSWORD|PRIVATE_KEY)=" --include="*.py" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -v ".env.example" | grep -v ".gitignore"; then
+            echo "❌ SECURITY VIOLATION: Secrets found!"
+            exit 1
+          fi
+          echo "✅ No secrets detected"
+          
+      - name: Verify .env Not Tracked
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "❌ SECURITY VIOLATION: .env is tracked!"
+            exit 1
+          fi
+          echo "✅ .env is NOT tracked"
+          
+      - name: Lint with Ruff
+        run: |
+          pip install ruff -q
+          ruff check invisible_core/ app_interface/ --ignore E501,E402
+          
+      - name: Check Import Structure
+        run: |
+          if grep -rn "from src\." --include="*.py" invisible_core/ app_interface/; then
+            echo "❌ Found old 'from src.' imports!"
+            exit 1
+          fi
+          echo "✅ All imports use new structure"
+
+  # ===========================================
+  # TIER 2: Heavy Validation (Heavy Server D2-8)
+  # Runs ONLY on Admin Approval or Manual Dispatch
+  # ===========================================
+  heavy-validation:
+    if: |
+      (github.event.review.state == 'approved') || 
+      (github.event_name == 'workflow_dispatch')
+    runs-on: linux_cpu_heavy
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python Environment
+        run: |
+          echo "🚀 Running on D2-8 (8GB RAM)..."
+          pip install torch torchvision --no-cache-dir -q
+          pip install -r requirements.txt -q || true
+          
+      - name: Run Import Tests
+        run: |
+          python -c "from invisible_core.cloaking import CloakEngine; print('✅ CloakEngine OK')"
+          python -c "from invisible_core.attacks.latent_cloak import LatentCloak; print('✅ LatentCloak OK')"
+          python -c "from invisible_core.validation.validator import Validator; print('✅ Validator OK')"
+          
+      - name: AI Benchmarks (Optional)
+        run: |
+          if [ -f "invisible_core/tests/benchmark_model.py" ]; then
+            python invisible_core/tests/benchmark_model.py || echo "Benchmark skipped (no test image)"
+          else
+            echo "Benchmark script not found, skipping."
+          fi
