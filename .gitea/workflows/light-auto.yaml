@@ -1,0 +1,76 @@
+name: 🟢 Light CI (Auto)
+
+on:
+  push:
+    branches: ['**'] # Run on all branches
+  pull_request:
+
+jobs:
+  fast-feedback:
+    runs-on: linux_cpu_light
+    steps:
+      - name: Manual Checkout
+        run: |
+          echo "⬇️ Cloning repository manually..."
+          git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
+
+      - name: Report Status (Pending)
+        if: always() && secrets.GITHUB_MIRROR_TOKEN != ''
+        run: |
+          python scripts/ci/github_status.py \
+            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --owner "innosol-online-OU" \
+            --repo "safesapce" \
+            --sha "${{ github.sha }}" \
+            --state "pending" \
+            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
+            --context "Gitea/Fast-Feedback" \
+            --desc "Running Lint & Security Checks..."
+
+      - name: Security Scan
+        run: |
+          echo "🔒 Scanning for exposed secrets..."
+          if grep -rE "(RUNNER_TOKEN|API_KEY|SECRET_KEY|PASSWORD|PRIVATE_KEY)=" --include="*.py" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -v ".env.example" | grep -v ".gitignore"; then
+            echo "❌ SECURITY VIOLATION: Secrets found!"
+            exit 1
+          fi
+          echo "✅ No secrets detected"
+          
+      - name: Verify .env Not Tracked
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "❌ SECURITY VIOLATION: .env is tracked!"
+            exit 1
+          fi
+          echo "✅ .env is NOT tracked"
+          
+      - name: Lint with Ruff
+        uses: docker://ghcr.io/astral-sh/ruff:latest
+        with:
+          args: check invisible_core/ app_interface/ --ignore E501,E402
+          
+      - name: Report Status (Success)
+        if: success() && secrets.GITHUB_MIRROR_TOKEN != ''
+        run: |
+          python scripts/ci/github_status.py \
+            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --owner "innosol-online-OU" \
+            --repo "safesapce" \
+            --sha "${{ github.sha }}" \
+            --state "success" \
+            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
+            --context "Gitea/Fast-Feedback" \
+            --desc "Checks passed!"
+
+      - name: Report Status (Failure)
+        if: failure() && secrets.GITHUB_MIRROR_TOKEN != ''
+        run: |
+          python scripts/ci/github_status.py \
+            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --owner "innosol-online-OU" \
+            --repo "safesapce" \
+            --sha "${{ github.sha }}" \
+            --state "failure" \
+            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
+            --context "Gitea/Fast-Feedback" \
+            --desc "Checks failed. Click for logs."
