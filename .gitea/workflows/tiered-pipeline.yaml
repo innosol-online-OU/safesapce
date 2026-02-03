@@ -3,7 +3,7 @@ name: "Tiered AI Pipeline"
 on:
   push:
     branches: [main, dev]
-    # Trigger 7: Manual Checkout
+    # Trigger 8: vRack Clone Fix
 
 jobs:
   fast-feedback:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Manual Checkout
         run: |
-          echo "⬇️ Cloning repository manually..."
+          echo "⬇️ Cloning repository manually (Public)..."
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
           echo "✅ Checkout complete"
           
@@ -51,10 +51,11 @@ jobs:
     if: success()
     runs-on: linux_cpu_heavy
     steps:
-      - name: Manual Checkout
+      - name: Manual Checkout (vRack)
         run: |
-          echo "⬇️ Cloning repository manually..."
-          git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
+          echo "⬇️ Cloning repository via vRack (10.1.0.61)..."
+          # Use internal IP to connect from Heavy Server to Light Server via Private Network
+          git clone --depth 1 http://git:${{ github.token }}@10.1.0.61/${{ github.repository }}.git .
           echo "✅ Checkout complete"
 
       - name: Build Test Environment
@@ -69,4 +70,3 @@ jobs:
             -v $(pwd)/tests:/app/tests \
             safespace-ci:latest \
             pytest tests/ --maxfail=1
-
