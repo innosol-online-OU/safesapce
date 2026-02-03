@@ -61,7 +61,7 @@ jobs:
       - name: Build Test Environment
         run: |
           echo "🐳 Building CI Image..."
-          docker build --network=host -t safespace-ci:latest -f Dockerfile.ci .
+          docker build --no-cache --network=host -t safespace-ci:latest -f Dockerfile.ci .
 
       - name: Run Pytest
         run: |
@@ -69,4 +69,4 @@ jobs:
           docker run --rm \
             -v $(pwd)/tests:/app/tests \
             safespace-ci:latest \
-            pytest tests/ --maxfail=1
+            python -m pytest tests/ --maxfail=1
