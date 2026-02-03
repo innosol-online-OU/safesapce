@@ -18,6 +18,7 @@ RUN sed 's/onnxruntime-gpu/onnxruntime/' requirements.txt > requirements-cpu.txt
 # Install PyTorch CPU and dependencies
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir pytest && \
     pip install --no-cache-dir -r requirements-cpu.txt
 
 # Copy Source Code
