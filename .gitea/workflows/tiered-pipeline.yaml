@@ -3,12 +3,12 @@ name: "Tiered AI Pipeline"
 on:
   push:
     branches: [main, dev]
-    # Trigger 5: Debug Shell
+    # Trigger 6: Standard Ubuntu Latest
 
 jobs:
   fast-feedback:
     if: github.event_name == 'push'
-    runs-on: linux_cpu_light
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       
