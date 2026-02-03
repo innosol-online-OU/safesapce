@@ -1,0 +1,43 @@
+name: Bridge to Private CI
+
+  pull_request:
+    types: [labeled, synchronize]
+  workflow_dispatch:
+
+jobs:
+  mirror-to-gitea:
+    if: contains(github.event.pull_request.labels.*.name, 'safe-to-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Public PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Push to Gitea
+        env:
+          # Constructs the secure URL using your secrets
+          TARGET_URL: "https://${{ secrets.GITEA_USER }}:${{ secrets.GITEA_TOKEN }}@${{ secrets.GITEA_HOST }}/${{ secrets.GITEA_USER }}/safespace.git"
+          PR_BRANCH: "pr-${{ github.event.number }}"
+        run: |
+          git config --global user.email "bot@innosol.online"
+          git config --global user.name "Bridge Bot"
+          
+          # Create a branch for this PR (e.g., pr-5)
+          git checkout -b $PR_BRANCH
+          
+          # Force push to Gitea to trigger the pipeline
+          echo "🚀 Pushing to Gitea..."
+          git push -f "$TARGET_URL" $PR_BRANCH
+
+      - name: Comment on GitHub
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "✅ **Code Mirrored to Private Factory!**\n\nThe `safe-to-test` label was detected.\n- **Status:** Running internal CI.\n- **Action:** Maintainers will review the results in Gitea."
+            })
