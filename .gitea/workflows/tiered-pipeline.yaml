@@ -67,6 +67,5 @@ jobs:
         run: |
           echo "🧪 Running Tests..."
           docker run --rm \
-            -v $(pwd)/tests:/app/tests \
             safespace-ci:latest \
-            python -m pytest tests/ --maxfail=1
+            bash -c "ls -la tests/ && python -m pytest tests/ --maxfail=1"
