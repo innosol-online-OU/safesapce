@@ -34,9 +34,9 @@ jobs:
           echo "✅ .env is NOT tracked"
           
       - name: Lint with Ruff
-        run: |
-          pip install ruff -q
-          ruff check invisible_core/ app_interface/ --ignore E501,E402
+        uses: docker://ghcr.io/astral-sh/ruff:latest
+        with:
+          args: check invisible_core/ app_interface/ --ignore E501,E402
           
       - name: Check Import Structure
         run: |
