@@ -1,9 +1,3 @@
-name: 🔴 Heavy CI (Manual)
-
-on:
-  workflow_dispatch:
-
-jobs:
   setup-heavy-instance:
     runs-on: linux_cpu_light
     steps:
@@ -23,19 +17,19 @@ jobs:
             --state "pending" \
             --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
             --context "Gitea/Heavy-Validation" \
-            --desc "Waking up Heavy Server..."
+            --desc "Waking up Heavy Server (Unshelving)..."
 
       - name: Wake Up Heavy Server
         env:
           OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
           OVH_APP_SECRET: ${{ secrets.OVH_APP_SECRET }}
           OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+          OVH_PROJECT_ID: ${{ secrets.OVH_PROJECT_ID }}
+          OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
         run: |
           echo "🚀 Waking up Heavy Instance..."
           pip install ovh
-          python scripts/ci/ovh_controller.py start \
-            --project-id "${{ secrets.OVH_PROJECT_ID }}" \
-            --instance-id "${{ secrets.OVH_INSTANCE_ID }}"
+          python scripts/maintenance/ovh_controller.py wake
 
   heavy-validation:
     needs: setup-heavy-instance
@@ -100,9 +94,10 @@ jobs:
           OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
           OVH_APP_SECRET: ${{ secrets.OVH_APP_SECRET }}
           OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+          OVH_PROJECT_ID: ${{ secrets.OVH_PROJECT_ID }}
+          OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
         run: |
-          echo "😴 Stopping Heavy Instance..."
+          echo "😴 Suspending Heavy Instance..."
           pip install ovh
-          python scripts/ci/ovh_controller.py stop \
-            --project-id "${{ secrets.OVH_PROJECT_ID }}" \
-            --instance-id "${{ secrets.OVH_INSTANCE_ID }}"
+          python scripts/maintenance/ovh_controller.py sleep
+
