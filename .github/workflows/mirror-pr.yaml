@@ -1,6 +1,7 @@
 name: Bridge to Private CI
 
 on:
+on:
   pull_request:
     types: [labeled, synchronize]
   workflow_dispatch:
