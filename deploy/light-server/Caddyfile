@@ -1,0 +1,10 @@
+# Public domain (via Cloudflare)
+gitea.innosol.online {
+    reverse_proxy localhost:8080
+}
+
+# Private network for runners (vRack)
+:80 {
+    bind 10.1.0.61
+    reverse_proxy localhost:8080
+}

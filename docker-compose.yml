@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+  # --- YOUR EXISTING CONTAINER ---
+  safespace:
+    image: safespace-app  # Use your existing image with all libraries
+    container_name: safespace
+    restart: unless-stopped
+    networks:
+      - invisible-net
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./models:/app/models
+      # Mount source code to run new refactored structure without rebuilding image
+      - ./invisible_core:/app/invisible_core
+      - ./app_interface:/app/app_interface
+      - ./scripts:/app/scripts
+      - ./.gitea:/app/.gitea
+    command: streamlit run app_interface/app.py --server.address=0.0.0.0 --server.port=8501
+    ports:
+      - "8501:8501"  # Streamlit
+      - "8080:8080"  # Gradio (alternative UI)
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # --- GITEA CODE HOST (The "Local GitHub") ---
+  gitea-server:
+    image: gitea/gitea:latest
+    container_name: gitea-server
+    restart: always
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    networks:
+      - invisible-net
+    volumes:
+      - gitea_data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"  # Web UI
+      - "2222:22"    # Git SSH
+
+  # --- AI RUNNER (The "Worker") ---
+  gitea-runner:
+    image: gitea/act_runner:latest
+    container_name: gitea-runner
+    restart: always
+    networks:
+      - invisible-net
+    depends_on:
+      - gitea-server
+    volumes:
+      - ./runner_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - GITEA_INSTANCE_URL=http://gitea-server:3000
+      # You get this token from Gitea UI: Site Admin > Actions > Runners
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${RUNNER_TOKEN}
+      - GITEA_RUNNER_NAME=local-gpu-runner
+      - GITEA_RUNNER_LABELS=linux_gpu:host
+    # ENABLE GPU PASSTHROUGH
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+# Define the shared network
+networks:
+  invisible-net:
+    driver: bridge
+volumes:
+  gitea_data:

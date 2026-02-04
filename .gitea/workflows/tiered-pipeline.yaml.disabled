@@ -1,0 +1,22 @@
+name: "Tiered AI Pipeline"
+
+on:
+  push:
+    branches: [main, dev]
+    # Trigger 6: Standard Ubuntu Latest
+
+jobs:
+  fast-feedback:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Debug Shell
+        run: echo "✅ Hello World from Ubuntu Runner"
+
+      - name: Debug Environment
+        run: |
+          whoami
+          pwd
+          ls -la

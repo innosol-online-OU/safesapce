@@ -1,0 +1,15 @@
+services:
+  runner-heavy:
+    image: gitea/act_runner:latest
+    container_name: runner-heavy
+    restart: always
+    network_mode: host
+    environment:
+      # Connect via private vRack network (10.1.0.0/24)
+      - GITEA_INSTANCE_URL=http://${GITEA_PRIVATE_IP}:80
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${RUNNER_TOKEN}
+      - GITEA_RUNNER_NAME=heavy-runner-d2-8
+      # Use full act runner image (Node + Python + Git)
+      - GITEA_RUNNER_LABELS=linux_cpu_heavy:docker://ghcr.io/catthehacker/ubuntu:act-22.04
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

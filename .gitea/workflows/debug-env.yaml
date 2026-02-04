@@ -1,0 +1,19 @@
+name: "Debug Environment"
+
+on: [push]
+
+jobs:
+  debug-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Node Version
+        run: |
+          echo "Checking Node.js..."
+          which node || echo "Node not in PATH"
+          node -v || echo "Node execution failed"
+          
+      - name: Check OS
+        run: cat /etc/os-release
+        
+      - name: Check Env
+        run: env

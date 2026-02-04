@@ -1,0 +1,34 @@
+F841 Local variable `steps` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:931:9
+    |
+929 |         if config is None:
+930 |              config = ProtectionConfig()
+931 |         steps = config.optimization_steps if config else 30
+    |         ^^^^^
+932 |         strength_mult = (config.strength / 50.0) if config else 1.0
+    |
+help: Remove assignment to unused variable `steps`
+
+E722 Do not use bare `except`
+  --> invisible_core\critics\qwen_critic.py:39:9
+   |
+37 |              else:
+38 |                  print("[QwenCritic] LM Studio not found. Using Local Model.")
+39 |         except:
+   |         ^^^^^^
+40 |              print("[QwenCritic] LM Studio not reachable. Using Local Model.")
+   |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:276:44
+    |
+274 |                 # Encode Both
+275 |                 def enc(p):
+276 |                     with open(p, "rb") as f: return base64.b64encode(f.read()).decode('utf-8')
+    |                                            ^
+277 |                 
+278 |                 b64_ref = enc(reference_path)
+    |
+
+Found 3 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
