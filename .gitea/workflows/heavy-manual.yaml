@@ -1,14 +1,30 @@
+name: Heavy CI (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run with debug logging'
+        required: false
+        default: 'false'
+
+jobs:
   setup-heavy-instance:
     runs-on: linux_cpu_light
+    container:
+      image: python:3.11-slim
+      options: --network host
     steps:
       - name: Manual Checkout
         run: |
           echo "⬇️ Cloning repository manually..."
+          apt-get update && apt-get install -y git
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
           
       - name: Report Status (Pending)
         if: always() && secrets.GITHUB_MIRROR_TOKEN != ''
         run: |
+          pip install requests
           python scripts/ci/github_status.py \
             --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
             --owner "innosol-online-OU" \
@@ -83,10 +99,14 @@
     needs: [heavy-validation, setup-heavy-instance]
     if: always()
     runs-on: linux_cpu_light
+    container:
+      image: python:3.11-slim
+      options: --network host
     steps:
       - name: Manual Checkout
         run: |
           echo "⬇️ Cloning repository manually..."
+          apt-get update && apt-get install -y git
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
 
       - name: Sleep Heavy Server
@@ -100,4 +120,3 @@
           echo "😴 Suspending Heavy Instance..."
           pip install ovh
           python scripts/maintenance/ovh_controller.py sleep
-
