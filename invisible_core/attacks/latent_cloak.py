@@ -1098,17 +1098,23 @@ class LatentCloak:
         start_x = int(w * 0.85)  # Start at 85% of width (bottom-right 15%)
         start_y = int(h * 0.90)  # Start at 90% of height (bottom 10%)
         
-        idx = 0
-        for y in range(max(0, start_y), h):
-            for x in range(max(0, start_x), w):
-                if idx < len(binary_msg):
-                    # Modify LSB of Red channel
-                    img_array[y, x, 0] = (img_array[y, x, 0] & 0xFE) | int(binary_msg[idx])
-                    idx += 1
-                else:
-                    break
-            if idx >= len(binary_msg):
-                break
+        # Convert message to bit array
+        bits = np.array([int(b) for b in binary_msg], dtype=np.uint8)
+
+        # Extract target region (Red channel)
+        # Note: Flattening a slice usually creates a copy, which is what we want for modification
+        target_slice = img_array[start_y:h, start_x:w, 0]
+        flat_target = target_slice.flatten()
+
+        # Determine how many bits we can embed
+        num_bits = min(len(bits), flat_target.size)
+
+        if num_bits > 0:
+            # Vectorized LSB modification
+            flat_target[:num_bits] = (flat_target[:num_bits] & 0xFE) | bits[:num_bits]
+
+            # Reshape and assign back to the image
+            img_array[start_y:h, start_x:w, 0] = flat_target.reshape(target_slice.shape)
         
         logger.info(f"[TrustBadge] Injected hidden payload: '{badge_text}' ({len(binary_msg)} bits)")
         return Image.fromarray(img_array)
