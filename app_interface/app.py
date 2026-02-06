@@ -4,6 +4,12 @@ AI Identity Defense Command Center
 """
 import streamlit as st
 import sys
+import os
+import html
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from invisible_core.session_manager import LiveSessionManager
 from app_interface.views.live_dashboard import render_live_dashboard
 
@@ -30,13 +36,10 @@ def load_face_analysis():
 # Native Streamlit image handling is used instead
 
 
-import os
 import uuid
 import numpy as np
 from PIL import Image
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from invisible_core.cloaking import CloakEngine
 
 from streamlit_drawable_canvas import st_canvas
@@ -819,7 +822,7 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                             <span style="color: #4ade80;">[SUCCESS]</span> Defense Matrix Applied.<br>
                             <span style="color: #94a3b8;">[INFO]</span> Optimization Steps: {actual_steps}<br>
                             <span style="color: #94a3b8;">[INFO]</span> DWT-Mamba Loss: {actual_dwt}<br>
-                            <span style="color: #94a3b8;">[INFO]</span> Neural Payload: {hidden_command if use_neural_stego else 'NONE'}<br>
+                            <span style="color: #94a3b8;">[INFO]</span> Neural Payload: {html.escape(hidden_command) if use_neural_stego else 'NONE'}<br>
                             <span style="color: #94a3b8;">[INFO]</span> Trust Badge: <span style="color: #4ade80;">INJECTED (Invisible)</span><br>
                             <span style="color: #facc15;">[WARN]</span> Bio-Signature Scrambled.<br>
                             <span style="color: #4ade80;">[SYSTEM]</span> Output generated at {output_path}
@@ -862,7 +865,7 @@ if st.button("⚡ ACTIVATE DEFENSE", type="primary"):
                                 <h4 style="color: {q_color}; margin: 0;">{q_icon} Qwen-VL Analysis</h4>
                                 <p style="color: #a0a0a0; font-size: 0.9em; margin: 5px 0;">
                                     <strong>Match Score:</strong> {q_score:.1f}%<br>
-                                    <strong>Verdict:</strong> {metrics.get('qwen_reason', 'Analysis complete.')}
+                                    <strong>Verdict:</strong> {html.escape(metrics.get('qwen_reason', 'Analysis complete.'))}
                                 </p>
                             </div>
                             """, unsafe_allow_html=True)
