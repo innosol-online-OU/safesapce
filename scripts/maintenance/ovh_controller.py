@@ -45,7 +45,9 @@ def wake_up():
         client.post(f'/cloud/project/{SERVICE_NAME}/instance/{INSTANCE_ID}/start')
     
     # Wait Loop
-    for i in range(40): # Wait up to ~6 minutes
+    # Unshelving can take time depending on disk size and OVH load.
+    # We allow up to 15 minutes (90 * 10s).
+    for i in range(90): 
         new_status = get_status()
         if new_status == 'ACTIVE':
             print("✅ Server is UP! Waiting 60s for network/docker...")
@@ -54,7 +56,7 @@ def wake_up():
         print(f"⏳ Booting... ({new_status})")
         time.sleep(10)
     
-    print("❌ Error: Server took too long to wake up.")
+    print("❌ Error: Server took too long to wake up (Timeout > 15m).")
     sys.exit(1)
 
 def sleep_now():
