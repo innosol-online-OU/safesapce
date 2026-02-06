@@ -25,23 +25,33 @@ jobs:
           OVH_PROJECT_ID: ${{ secrets.OVH_PROJECT_ID }}
           OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
         run: |
-          echo "🚀 Waking up Heavy Instance..."
-          # Install OVH using the system python (pre-installed in catthehacker image)
-          pip install ovh requests
-          python scripts/maintenance/ovh_controller.py wake
+          echo "🚀 Waking up Heavy Instance (via Docker Host Network)..."
+          # Run inside a container attached to Host Network to bypass Runner isolation
+          docker run --rm --network host \
+            -v "$PWD":/app -w /app \
+            -e OVH_APP_KEY -e OVH_APP_SECRET -e OVH_CONSUMER_KEY -e OVH_PROJECT_ID -e OVH_INSTANCE_ID \
+            python:3.11-slim \
+            bash -c "pip install ovh && python scripts/maintenance/ovh_controller.py wake"
 
       - name: Report Status (Pending)
         if: always() && secrets.GITHUB_MIRROR_TOKEN != ''
+        env:
+           GITHUB_MIRROR_TOKEN: ${{ secrets.GITHUB_MIRROR_TOKEN }}
         run: |
-          python scripts/ci/github_status.py \
-            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
-            --owner "innosol-online-OU" \
-            --repo "safesapce" \
-            --sha "${{ github.sha }}" \
-            --state "pending" \
-            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
-            --context "Gitea/Heavy-Validation" \
-            --desc "Waking up Heavy Server (Unshelving)..."
+          # Run status report via host network too
+          docker run --rm --network host \
+            -v "$PWD":/app -w /app \
+            -e GITHUB_MIRROR_TOKEN \
+            python:3.11-slim \
+            bash -c "pip install requests && python scripts/ci/github_status.py \
+              --token '$GITHUB_MIRROR_TOKEN' \
+              --owner 'innosol-online-OU' \
+              --repo 'safesapce' \
+              --sha '${{ github.sha }}' \
+              --state 'pending' \
+              --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
+              --context 'Gitea/Heavy-Validation' \
+              --desc 'Waking up Heavy Server (Unshelving)...'"
 
   heavy-validation:
     needs: setup-heavy-instance
@@ -67,29 +77,41 @@ jobs:
 
       - name: Report Status (Success)
         if: success() && secrets.GITHUB_MIRROR_TOKEN != ''
+        env:
+           GITHUB_MIRROR_TOKEN: ${{ secrets.GITHUB_MIRROR_TOKEN }}
         run: |
-          python scripts/ci/github_status.py \
-            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
-            --owner "innosol-online-OU" \
-            --repo "safesapce" \
-            --sha "${{ github.sha }}" \
-            --state "success" \
-            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
-            --context "Gitea/Heavy-Validation" \
-            --desc "All Heavy Tests passed!"
+          docker run --rm --network host \
+            -v "$PWD":/app -w /app \
+            -e GITHUB_MIRROR_TOKEN \
+            python:3.11-slim \
+            bash -c "pip install requests && python scripts/ci/github_status.py \
+              --token '$GITHUB_MIRROR_TOKEN' \
+              --owner 'innosol-online-OU' \
+              --repo 'safesapce' \
+              --sha '${{ github.sha }}' \
+              --state 'success' \
+              --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
+              --context 'Gitea/Heavy-Validation' \
+              --desc 'All Heavy Tests passed!'"
 
       - name: Report Status (Failure)
         if: failure() && secrets.GITHUB_MIRROR_TOKEN != ''
+        env:
+           GITHUB_MIRROR_TOKEN: ${{ secrets.GITHUB_MIRROR_TOKEN }}
         run: |
-          python scripts/ci/github_status.py \
-            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
-            --owner "innosol-online-OU" \
-            --repo "safesapce" \
-            --sha "${{ github.sha }}" \
-            --state "failure" \
-            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
-            --context "Gitea/Heavy-Validation" \
-            --desc "Heavy Verification Failed!"
+          docker run --rm --network host \
+            -v "$PWD":/app -w /app \
+            -e GITHUB_MIRROR_TOKEN \
+            python:3.11-slim \
+            bash -c "pip install requests && python scripts/ci/github_status.py \
+              --token '$GITHUB_MIRROR_TOKEN' \
+              --owner 'innosol-online-OU' \
+              --repo 'safesapce' \
+              --sha '${{ github.sha }}' \
+              --state 'failure' \
+              --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
+              --context 'Gitea/Heavy-Validation' \
+              --desc 'Heavy Verification Failed!'"
 
   teardown-heavy-instance:
     needs: [heavy-validation, setup-heavy-instance]
@@ -110,5 +132,8 @@ jobs:
           OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
         run: |
           echo "😴 Suspending Heavy Instance..."
-          pip install ovh requests
-          python scripts/maintenance/ovh_controller.py sleep
+          docker run --rm --network host \
+            -v "$PWD":/app -w /app \
+            -e OVH_APP_KEY -e OVH_APP_SECRET -e OVH_CONSUMER_KEY -e OVH_PROJECT_ID -e OVH_INSTANCE_ID \
+            python:3.11-slim \
+            bash -c "pip install ovh && python scripts/maintenance/ovh_controller.py sleep"
