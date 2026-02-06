@@ -53,13 +53,13 @@ jobs:
         with:
           script: |
             const checks = ['Gitea/Fast-Feedback', 'Gitea/Heavy-Validation'];
-            for (const context of checks) {
+            for (const check_name of checks) {
               await github.rest.repos.createCommitStatus({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 sha: context.payload.pull_request.head.sha,
                 state: 'pending',
-                context: context,
+                context: check_name,
                 description: 'Waiting for Gitea Runner...'
               });
             }
