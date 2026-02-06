@@ -250,4 +250,25 @@ python tests/benchmark_all_methods.py
 
 ---
 
+## 🤖 CI Workflow (Admins)
+
+The project uses a **Tiered CI Pipeline**:
+- **Light CI (GitHub Actions)**: Runs linting/security checks on every push.
+- **Heavy CI (Gitea Actions)**: Runs GPU-based end-to-end tests on an OVH Bare Metal Server.
+
+### Manual Controls (Gitea Interface)
+
+When manually triggering the **Heavy CI (Manual)** workflow in Gitea, you have two options:
+
+1.  **Skip Tests?** ⏩
+    - If checked: The workflow reports "Success (Skipped)" to GitHub immediately.
+    - **Use Case**: Quick merges for documentation fixes or minor tweaks where GPU testing is overkill.
+
+2.  **Skip Teardown?** ⚠️
+    - If checked: The OVH Server remains **ACTIVE** (costing money) after tests finish.
+    - **Use Case**: Debugging or running multiple test suites back-to-back to save wake-up time (15m).
+    - **Warning**: You MUST manually stop/shelve the server later using the script or subsequent run.
+
+---
+
 Thank you for contributing to SafeSpace! 🛡️

@@ -56,6 +56,8 @@ src/          # Production code
 research/     # Notebooks, model training
 tests/        # Verification scripts
 docs/         # Internal (gitignored)
+.gitea/       # Private CI workflows (Gitea Actions)
+scripts/ci/   # CI/CD utilities (OVH/GitHub Bridge)
 ```
 
 ---
