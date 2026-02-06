@@ -1,0 +1,20 @@
+name: Sync Main to Factory
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  sync-main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Push to Gitea
+        env:
+           TARGET_URL: "https://${{ secrets.GITEA_USER }}:${{ secrets.GITEA_TOKEN }}@${{ secrets.GITEA_HOST }}/${{ secrets.GITEA_USER }}/safespace.git"
+        run: |
+          echo "🚀 Syncing main branch to Gitea..."
+          git push -f "$TARGET_URL" main
