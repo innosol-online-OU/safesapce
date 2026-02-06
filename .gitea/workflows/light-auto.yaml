@@ -16,16 +16,22 @@ jobs:
 
       - name: Report Status (Pending)
         if: always() && secrets.MIRROR_TOKEN != ''
+        env:
+           GITHUB_MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          python scripts/ci/github_status.py \
-            --token "${{ secrets.MIRROR_TOKEN }}" \
-            --owner "innosol-online-OU" \
-            --repo "safesapce" \
-            --sha "${{ github.sha }}" \
-            --state "pending" \
-            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
-            --context "Gitea/Fast-Feedback" \
-            --desc "Running Lint & Security Checks..."
+          tar -cf - scripts/ci/github_status.py | docker run --rm --network host -i \
+            -w /app \
+            -e GITHUB_MIRROR_TOKEN \
+            python:3.11-slim \
+            bash -c "tar -xf - && pip install requests && python scripts/ci/github_status.py \
+              --token '$GITHUB_MIRROR_TOKEN' \
+              --owner 'innosol-online-OU' \
+              --repo 'safesapce' \
+              --sha '${{ github.sha }}' \
+              --state 'pending' \
+              --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
+              --context 'Gitea/Fast-Feedback' \
+              --desc 'Running Lint & Security Checks...'"
 
       - name: Security Scan
         run: |
@@ -51,26 +57,38 @@ jobs:
           
       - name: Report Status (Success)
         if: success() && secrets.MIRROR_TOKEN != ''
+        env:
+           GITHUB_MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          python scripts/ci/github_status.py \
-            --token "${{ secrets.MIRROR_TOKEN }}" \
-            --owner "innosol-online-OU" \
-            --repo "safesapce" \
-            --sha "${{ github.sha }}" \
-            --state "success" \
-            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
-            --context "Gitea/Fast-Feedback" \
-            --desc "Checks passed!"
+          tar -cf - scripts/ci/github_status.py | docker run --rm --network host -i \
+            -w /app \
+            -e GITHUB_MIRROR_TOKEN \
+            python:3.11-slim \
+            bash -c "tar -xf - && pip install requests && python scripts/ci/github_status.py \
+              --token '$GITHUB_MIRROR_TOKEN' \
+              --owner 'innosol-online-OU' \
+              --repo 'safesapce' \
+              --sha '${{ github.sha }}' \
+              --state 'success' \
+              --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
+              --context 'Gitea/Fast-Feedback' \
+              --desc 'Checks passed!'"
 
       - name: Report Status (Failure)
         if: failure() && secrets.MIRROR_TOKEN != ''
+        env:
+           GITHUB_MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          python scripts/ci/github_status.py \
-            --token "${{ secrets.MIRROR_TOKEN }}" \
-            --owner "innosol-online-OU" \
-            --repo "safesapce" \
-            --sha "${{ github.sha }}" \
-            --state "failure" \
-            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
-            --context "Gitea/Fast-Feedback" \
-            --desc "Checks failed. Click for logs."
+          tar -cf - scripts/ci/github_status.py | docker run --rm --network host -i \
+            -w /app \
+            -e GITHUB_MIRROR_TOKEN \
+            python:3.11-slim \
+            bash -c "tar -xf - && pip install requests && python scripts/ci/github_status.py \
+              --token '$GITHUB_MIRROR_TOKEN' \
+              --owner 'innosol-online-OU' \
+              --repo 'safesapce' \
+              --sha '${{ github.sha }}' \
+              --state 'failure' \
+              --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
+              --context 'Gitea/Fast-Feedback' \
+              --desc 'Checks failed. Click for logs.'"
