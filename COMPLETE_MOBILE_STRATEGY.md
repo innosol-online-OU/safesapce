@@ -1,3 +1,4 @@
+
 # SafeSpace Evaluation & Mobile Strategy Report
 
 ## 1. Executive Summary
@@ -29,6 +30,10 @@ Adopt a **Hybrid "Thin Client" Architecture** immediately for the MVP, while res
 *   **Heavy Dependencies:** `torch`, `diffusers`, `timm`, `insightface` are massive libraries.
 *   **Synchronous Blocking:** The Streamlit app processes images synchronously. In a multi-user mobile backend, this would cause massive queues and timeouts.
 *   **Lack of API:** There is no REST API. The logic is tightly coupled to the Streamlit UI (`st.session_state`), making it hard to decouple for a mobile frontend.
+
+### Library Pattern Analysis
+*   **Current State:** The `invisible_core` package is technically importable but not a true "Library". It lacks a `setup.py` and relies on implicit context from the Streamlit app (e.g., `st.session_state` calls inside `CloakEngine`).
+*   **Recommendation:** Refactor `invisible_core` into a standalone, pip-installable library. Remove all `streamlit` dependencies from the core logic. This allows the backend API to import it cleanly without the UI overhead.
 
 ---
 
@@ -84,7 +89,7 @@ Adopt a **Hybrid "Thin Client" Architecture** immediately for the MVP, while res
 | :--- | :--- | :--- | :--- |
 | **Face Detection** | `InsightFace` (Slow, Accurate) | **Easy** (Apple Vision/ML Kit) | Replacing Python logic with native OS APIs. |
 | **Liquid Warp** | `torch.nn.functional.grid_sample` | **Medium** (Metal/OpenGL Shaders) | Rewriting warp logic in shader language (GLSL/MSL). |
-| **Ghost Noise** | Iterative Optimization (Adam + SigLIP) | **Hard** (CoreML/TFLite) | Running 50 backprop steps on a phone is too slow/hot. |
+| **GhostMesh (Full)** | Iterative Optimization (Adam + SigLIP) | **Hard** (CoreML/TFLite) | Running 50 backprop steps on a phone is too slow/hot. |
 | **Critics (LPIPS)** | `lpips` (AlexNet) | **Medium** (CoreML) | Can be converted, but running it 50x per image is heavy. |
 | **Dependencies** | 4GB+ Docker Image | **Impossible** (App Store Limit) | Must rewrite logic from scratch in Swift/Kotlin/C++. |
 
@@ -108,61 +113,29 @@ Adopt a **Hybrid "Thin Client" Architecture** immediately for the MVP, while res
 ### Step 4: Research On-Device Shaders
 *   Start prototyping the "Liquid Warp" as a GPU Shader (GLSL) for the mobile app. This allows "Instant Protection" (visual only) on the phone.
 
-# Mobile Architecture & Roadmap
+---
 
-## 1. Overview
-SafeSpace is currently a heavy Python-based research tool. To bring this to mobile users, we must adopt a **Client-Server Architecture**. The phone (Client) handles UI and lightweight tasks, while the cloud (Server) performs the heavy adversarial optimization.
+## 7. Technique Valuation: Is GhostMesh Worth It?
 
-## 2. Ideal Architecture (Hybrid)
+### GhostMesh (Current)
+*   **Technique:** 50-step optimization using heavy AI critics (SigLIP) to find minimal noise + warp.
+*   **Pros:** Highly robust against modern facial recognition (ArcFace, MagFace). High visual quality (LPIPS constraint).
+*   **Cons:** Extremely slow (30s+). Requires GPU.
+*   **Verdict:** **Necessary for High Security.** If the goal is to beat Clearview AI, simple tricks won't work.
 
-### A. The Mobile App (Client)
-*   **Platform:** Flutter or React Native (Cross-platform).
-*   **Responsibilities:**
-    1.  **UI/UX:** Select photo, crop, adjust strength slider.
-    2.  **Preprocessing:** Resize image to max 1024px (save bandwidth).
-    3.  **Local "Lite" Defense:**
-        *   Apply *Geometric Warping* (Liquid Warp) using **GLSL Shaders** (GPU). This is instant and free.
-        *   Apply *Color Jitter/Noise* overlays.
-    4.  **Upload:** Send image to API for "Deep Protection" (GhostMesh).
-    5.  **Result:** Display before/after comparison.
+### Lighter Alternatives (For Mobile)
+1.  **Shader-Based Liquid Warp (Recommended):**
+    *   **Technique:** Use GPU shaders to apply a non-linear warp field to facial features (like a focal length distortion).
+    *   **Pros:** Instant (60fps). Works offline. Visually imperceptible if tuned correctly.
+    *   **Cons:** Does not fool pixel-level matchers effectively. Only geometric matchers.
+2.  **Universal Adversarial Perturbation (UAP):**
+    *   **Technique:** Pre-compute a single "noise pattern" and add it to the image.
+    *   **Pros:** Instant (O(1)).
+    *   **Cons:** Often visible as a static texture. Lower success rate.
+3.  **One-Shot FGSM:**
+    *   **Technique:** Take a single gradient step from a small model (MobileFaceNet).
+    *   **Pros:** Fast (1 step).
+    *   **Cons:** Visible noise artifacts. Easy to filter out.
 
-### B. The Cloud Backend (Server)
-*   **API Gateway:** FastAPI (Python) handling REST requests.
-*   **Task Queue:** Celery + Redis.
-    *   *Why?* Image processing takes >10 seconds. HTTP requests time out.
-    *   *Flow:* App POSTs image -> API returns Job ID -> App polls status -> API returns Result URL.
-*   **Worker Nodes:** GPU Instances (T4 or A10G) running the `invisible_core` Docker container.
-    *   *Auto-scaling:* Scale from 0 to N based on queue length (KEDA + Kubernetes or Serverless GPU like RunPod).
-
-## 3. Implementation Roadmap
-
-### Phase 1: MVP (Month 1-2)
-**Focus:** Get the core tech working via API.
-1.  **Refactor `invisible_core`:** Decouple from Streamlit. Create a pure Python `def protect(image) -> image`.
-2.  **Build FastAPI Wrapper:** Create endpoints `/protect` and `/status/{job_id}`.
-3.  **Deploy to GPU Cloud:** Use a serverless GPU provider (e.g., RunPod, Modal) to avoid paying for idle GPUs.
-4.  **Basic Mobile App:** A simple "Upload & Wait" interface.
-
-### Phase 2: Hybrid "Instant" Mode (Month 3-4)
-**Focus:** Improve user experience (latency).
-1.  **Port Liquid Warp to Shader:** Rewrite the grid sample logic in GLSL/Metal.
-    *   *Result:* Users see "Instant Protection" on their phone screen.
-2.  **Integration:** Allow users to save the "Instant" version (free) or upload for "Deep" version (premium).
-
-### Phase 3: On-Device Optimization (Month 5+)
-**Focus:** Privacy & Cost reduction.
-1.  **Model Distillation:** Train a `MobileNetV3` to approximate the `SigLIP` critic's gradients.
-2.  **CoreML Conversion:** Convert the distilled model to CoreML (iOS) / TFLite (Android).
-3.  **On-Device Loop:** Run a simplified 10-step optimization on the phone's NPU.
-
-## 4. Feasibility Check
-
-| Component | Difficulty | Cost | Mobile Ready? |
-| :--- | :--- | :--- | :--- |
-| **API Backend** | Low | High ($$/hr GPU) | Yes (via Network) |
-| **Liquid Warp (Shader)** | Medium | Low (Local) | Yes (Requires rewriting) |
-| **GhostMesh (Full)** | High | High (GPU) | No (Too slow on phone) |
-| **GhostMesh (Distilled)** | Very High | Low (Local) | Maybe (R&D needed) |
-
-## 5. Conclusion
-We recommend starting with **Phase 1 (API Backend)** immediately. This validates the market with the powerful existing tech. Parallelly, begin **Phase 2 (Shaders)** to offer a responsive mobile experience. Phase 3 is high-risk R&D and should be deferred.
+**Conclusion:**
+Use **GhostMesh (Cloud)** for premium, high-security protection. Use **Liquid Warp (Shader)** for free, instant mobile protection.
