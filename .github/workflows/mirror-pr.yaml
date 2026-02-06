@@ -52,7 +52,7 @@ jobs:
       - name: Pre-Register Status Checks
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.MIRROR_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const checks = ['Gitea/Fast-Feedback', 'Gitea/Heavy-Validation'];
             for (const check_name of checks) {
