@@ -11,30 +11,12 @@ on:
 jobs:
   setup-heavy-instance:
     runs-on: linux_cpu_light
-    container:
-      image: python:3.11-slim
-      options: --network host
     steps:
       - name: Manual Checkout
         run: |
           echo "⬇️ Cloning repository manually..."
-          apt-get update && apt-get install -y git
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
           
-      - name: Report Status (Pending)
-        if: always() && secrets.GITHUB_MIRROR_TOKEN != ''
-        run: |
-          pip install requests
-          python scripts/ci/github_status.py \
-            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
-            --owner "innosol-online-OU" \
-            --repo "safesapce" \
-            --sha "${{ github.sha }}" \
-            --state "pending" \
-            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
-            --context "Gitea/Heavy-Validation" \
-            --desc "Waking up Heavy Server (Unshelving)..."
-
       - name: Wake Up Heavy Server
         env:
           OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
@@ -44,8 +26,22 @@ jobs:
           OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
         run: |
           echo "🚀 Waking up Heavy Instance..."
-          pip install ovh
+          # Install OVH using the system python (pre-installed in catthehacker image)
+          pip install ovh requests
           python scripts/maintenance/ovh_controller.py wake
+
+      - name: Report Status (Pending)
+        if: always() && secrets.GITHUB_MIRROR_TOKEN != ''
+        run: |
+          python scripts/ci/github_status.py \
+            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --owner "innosol-online-OU" \
+            --repo "safesapce" \
+            --sha "${{ github.sha }}" \
+            --state "pending" \
+            --url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}" \
+            --context "Gitea/Heavy-Validation" \
+            --desc "Waking up Heavy Server (Unshelving)..."
 
   heavy-validation:
     needs: setup-heavy-instance
@@ -99,14 +95,10 @@ jobs:
     needs: [heavy-validation, setup-heavy-instance]
     if: always()
     runs-on: linux_cpu_light
-    container:
-      image: python:3.11-slim
-      options: --network host
     steps:
       - name: Manual Checkout
         run: |
           echo "⬇️ Cloning repository manually..."
-          apt-get update && apt-get install -y git
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
 
       - name: Sleep Heavy Server
@@ -118,5 +110,5 @@ jobs:
           OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
         run: |
           echo "😴 Suspending Heavy Instance..."
-          pip install ovh
+          pip install ovh requests
           python scripts/maintenance/ovh_controller.py sleep
