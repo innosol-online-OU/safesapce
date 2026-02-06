@@ -7,6 +7,11 @@ on:
         description: 'Run with debug logging'
         required: false
         default: 'false'
+      skip_tests:
+        description: '⏩ Skip Tests (Only report Skipped Status)?'
+        required: false
+        default: 'false'
+        type: boolean
       skip_teardown:
         description: '⚠️ Skip Teardown (Keep server RUNNING)?'
         required: false
@@ -16,13 +21,19 @@ on:
 jobs:
   setup-heavy-instance:
     runs-on: linux_cpu_light
+    outputs:
+      was_skipped: ${{ steps.check.outputs.skipped }}
     steps:
+      - id: check
+        run: echo "skipped=${{ inputs.skip_tests }}" >> $GITHUB_OUTPUT
+
       - name: Manual Checkout
         run: |
           echo "⬇️ Cloning repository manually..."
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
           
       - name: Wake Up Heavy Server
+        if: inputs.skip_tests != true
         env:
           OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
           OVH_APP_SECRET: ${{ secrets.OVH_APP_SECRET }}
@@ -39,7 +50,7 @@ jobs:
             bash -c "tar -xf - && pip install ovh && python scripts/maintenance/ovh_controller.py wake"
 
       - name: Report Status (Pending)
-        if: always() && secrets.MIRROR_TOKEN != ''
+        if: inputs.skip_tests != true && always() && secrets.MIRROR_TOKEN != ''
         env:
            GITHUB_MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
@@ -57,8 +68,28 @@ jobs:
               --context 'Gitea/Heavy-Validation' \
               --desc 'Waking up Heavy Server (Unshelving)...'"
 
+      - name: Report Status (Skipped)
+        if: inputs.skip_tests == true && secrets.MIRROR_TOKEN != ''
+        env:
+           GITHUB_MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          tar -cf - scripts/ci/github_status.py | docker run --rm --network host -i \
+            -w /app \
+            -e GITHUB_MIRROR_TOKEN \
+            python:3.11-slim \
+            bash -c "tar -xf - && pip install requests && python scripts/ci/github_status.py \
+              --token '$GITHUB_MIRROR_TOKEN' \
+              --owner 'innosol-online-OU' \
+              --repo 'safesapce' \
+              --sha '${{ github.sha }}' \
+              --state 'success' \
+              --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
+              --context 'Gitea/Heavy-Validation' \
+              --desc 'Skipped by Admin (Tests not run).'"
+
   heavy-validation:
     needs: setup-heavy-instance
+    if: needs.setup-heavy-instance.outputs.was_skipped != 'true'
     runs-on: linux_cpu_heavy
     steps:
       - name: Manual Checkout (vRack)
@@ -119,7 +150,7 @@ jobs:
 
   teardown-heavy-instance:
     needs: [heavy-validation, setup-heavy-instance]
-    if: always() && inputs.skip_teardown != true
+    if: always() && inputs.skip_teardown != true && needs.setup-heavy-instance.outputs.was_skipped != 'true'
     runs-on: linux_cpu_light
     steps:
       - name: Manual Checkout

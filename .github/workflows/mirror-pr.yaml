@@ -47,3 +47,19 @@ jobs:
               repo: context.repo.repo,
               body: "✅ **Code Mirrored to Private Factory!**\n\nThe `safe-to-test` label was detected.\n- **Status:** Running internal CI.\n- **Action:** Maintainers will review the results in Gitea."
             })
+
+      - name: Pre-Register Status Checks
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const checks = ['Gitea/Fast-Feedback', 'Gitea/Heavy-Validation'];
+            for (const context of checks) {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.payload.pull_request.head.sha,
+                state: 'pending',
+                context: context,
+                description: 'Waiting for Gitea Runner...'
+              });
+            }
