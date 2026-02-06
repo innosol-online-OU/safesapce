@@ -14,7 +14,7 @@ jobs:
       
       - name: Push to Gitea
         env:
-           TARGET_URL: "https://${{ secrets.GITEA_USER }}:${{ secrets.GITEA_TOKEN }}@${{ secrets.GITEA_HOST }}/${{ secrets.GITEA_USER }}/safespace.git"
+           TARGET: "https://${{ secrets.GITEA_USER }}:${{ secrets.GITEA_TOKEN }}@${{ secrets.GITEA_HOST }}/${{ secrets.GITEA_USER }}/safespace.git"
         run: |
-          echo "🚀 Syncing main branch to Gitea..."
-          git push -f "$TARGET_URL" main
+          echo "🚀 Syncing..."
+          git push -f "$TARGET" main
