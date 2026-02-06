@@ -31,32 +31,27 @@ def wake_up():
     print(f"🔍 Current Status: {status}")
 
     if status == 'ACTIVE':
-        print("✅ Server is already running.")
+        print("✅ Active")
         return
 
-    # CASE 1: Deep Sleep (Shelved/Suspended) -> This saves money!
     if status == 'SHELVED_OFFLOADED':
-        print("🚀 Unshelving (Waking from deep sleep)... This takes ~2-3 mins.")
+        print("🚀 Unshelving...")
         client.post(f'/cloud/project/{SERVICE_NAME}/instance/{INSTANCE_ID}/unshelve')
-    
-    # CASE 2: Soft Sleep (Stopped) -> This costs money!
     elif status == 'SHUTOFF':
-        print("⚡ Starting (Waking from soft sleep)...")
+        print("⚡ Starting...")
         client.post(f'/cloud/project/{SERVICE_NAME}/instance/{INSTANCE_ID}/start')
     
-    # Wait Loop
-    # Unshelving can take time depending on disk size and OVH load.
-    # We allow up to 60 minutes (360 * 10s).
+    # Wait Loop (60m Max)
     for i in range(360): 
         new_status = get_status()
         if new_status == 'ACTIVE':
-            print("✅ Server is UP! Waiting 60s for network/docker...")
+            print("✅ Up. Waiting 60s...")
             time.sleep(60) 
             return
-        print(f"⏳ Booting... ({new_status})")
+        print(f"⏳ {new_status}...")
         time.sleep(10)
     
-    print("❌ Error: Server took too long to wake up (Timeout > 15m).")
+    print("❌ Timeout (>60m)")
     sys.exit(1)
 
 def sleep_now():

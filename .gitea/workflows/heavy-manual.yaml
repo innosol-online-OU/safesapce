@@ -8,12 +8,12 @@ on:
         required: false
         default: 'false'
       skip_tests:
-        description: '⏩ Skip Tests (Only report Skipped Status)?'
+        description: '⏩ Skip Tests (Report Skipped)?'
         required: false
         default: 'false'
         type: boolean
       skip_teardown:
-        description: '⚠️ Skip Teardown (Keep server RUNNING)?'
+        description: '⚠️ Skip Teardown (Keep Running)?'
         required: false
         default: 'false'
         type: boolean
@@ -29,7 +29,7 @@ jobs:
 
       - name: Manual Checkout
         run: |
-          echo "⬇️ Cloning repository manually..."
+          echo "⬇️ Cloning..."
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
           
       - name: Wake Up Heavy Server
@@ -41,15 +41,14 @@ jobs:
           OVH_PROJECT_ID: ${{ secrets.OVH_PROJECT_ID }}
           OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
         run: |
-          echo "🚀 Waking up Heavy Instance (via Docker Host Network)..."
-          # Use tar pipe to copy scripts into the container (bypasses volume mapping issues)
+          echo "🚀 Waking..."
           tar -cf - scripts/maintenance/ovh_controller.py | docker run --rm --network host -i \
             -w /app \
             -e OVH_APP_KEY -e OVH_APP_SECRET -e OVH_CONSUMER_KEY -e OVH_PROJECT_ID -e OVH_INSTANCE_ID \
             python:3.11-slim \
             bash -c "tar -xf - && pip install ovh && python scripts/maintenance/ovh_controller.py wake"
 
-      - name: Report Status (Pending)
+      - name: Report Pending
         if: inputs.skip_tests != true && always() && secrets.MIRROR_TOKEN != ''
         env:
            GITHUB_MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
@@ -66,7 +65,7 @@ jobs:
               --state 'pending' \
               --url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}' \
               --context 'Gitea/Heavy-Validation' \
-              --desc 'Waking up Heavy Server (Unshelving)...'"
+              --desc 'Waking...'"
 
       - name: Report Status (Skipped)
         if: inputs.skip_tests == true && secrets.MIRROR_TOKEN != ''
