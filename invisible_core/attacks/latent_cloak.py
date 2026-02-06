@@ -151,6 +151,7 @@ class LatentCloak:
         # Resources (initialized lazily)
         self.face_analysis = None
         self.siglip = None
+        self._skin_kernel = None
         
         # State flags
         self.detectors_loaded = False
@@ -638,19 +639,21 @@ class LatentCloak:
         noise = torch.randn(shape, device=device)
         
         # 2. Gaussian Blur to create "Mid-Freq" lumps (Skin structure)
-        # 5x5 kernel
-        k_size = 5
-        sigma = 1.0
-        x_coord = torch.arange(k_size).float().to(device) - k_size // 2
-        kernel_1d = torch.exp(-x_coord**2 / (2 * sigma**2))
-        kernel_1d = kernel_1d / kernel_1d.sum()
-        # Create 2D separable kernel
-        kernel_2d = kernel_1d.unsqueeze(1) @ kernel_1d.unsqueeze(0)
-        kernel_2d = kernel_2d.expand(3, 1, k_size, k_size) # Depth-wise
+        if self._skin_kernel is None or self._skin_kernel.device != noise.device:
+            # 5x5 kernel
+            k_size = 5
+            sigma = 1.0
+            x_coord = torch.arange(k_size).float().to(device) - k_size // 2
+            kernel_1d = torch.exp(-x_coord**2 / (2 * sigma**2))
+            kernel_1d = kernel_1d / kernel_1d.sum()
+            # Create 2D separable kernel
+            kernel_2d = kernel_1d.unsqueeze(1) @ kernel_1d.unsqueeze(0)
+            self._skin_kernel = kernel_2d.expand(3, 1, k_size, k_size).contiguous() # Depth-wise
         
         # Apply padding to keep size
+        k_size = self._skin_kernel.shape[2]
         pad = k_size // 2
-        texture = F.conv2d(noise, kernel_2d, padding=pad, groups=3)
+        texture = F.conv2d(noise, self._skin_kernel, padding=pad, groups=3)
         
         # 3. Normalize to [-1, 1] range roughly
         texture = (texture - texture.mean()) / (texture.std() + 1e-6)
