@@ -1677,6 +1677,14 @@ class LatentCloak:
             'vertical_loss': []
         }
         
+        # Intermediate storage for tensors to avoid .item() syncs in loop
+        metrics_tensors = {
+            'avg_sim': [],
+            'tv_loss': [],
+            'disp_max': [],
+            'vertical_loss': []
+        }
+
         for step in range(num_steps):
             optimizer.zero_grad()
             
@@ -1738,17 +1746,23 @@ class LatentCloak:
                 best_loss = loss.item()
                 best_displacement = displacement_lr.data.clone()
             
-            # Collect metrics for visualization
-            disp_max = displacement_masked.abs().max().item()
-            metrics_history['step'].append(step)
-            metrics_history['avg_sim'].append(avg_sim.item())
-            metrics_history['tv_loss'].append(tv_loss.item())
-            metrics_history['disp_max'].append(disp_max)
-            metrics_history['vertical_loss'].append(vertical_loss.item())
+            # Collect metrics for visualization (avoid .item() inside loop)
+            with torch.no_grad():
+                disp_max_tensor = displacement_masked.abs().max()
+                metrics_tensors['avg_sim'].append(avg_sim.detach())
+                metrics_tensors['tv_loss'].append(tv_loss.detach())
+                metrics_tensors['disp_max'].append(disp_max_tensor)
+                metrics_tensors['vertical_loss'].append(vertical_loss.detach())
             
             if step % 10 == 0:
                 # pixel_diff = (warped - img_tensor).abs().mean().item()
-                print(f"LiquidV2d Step {step}/{num_steps} | AvgSim: {avg_sim.item():.4f} | TV: {tv_loss.item():.4f} | DispMax: {disp_max:.6f} | VertLoss: {vertical_loss.item():.6f}", flush=True)
+                print(f"LiquidV2d Step {step}/{num_steps} | AvgSim: {avg_sim.item():.4f} | TV: {tv_loss.item():.4f} | DispMax: {disp_max_tensor.item():.6f} | VertLoss: {vertical_loss.item():.6f}", flush=True)
+
+        # Batch convert metrics to list of floats
+        metrics_history['step'] = list(range(num_steps))
+        for key in metrics_tensors:
+            if metrics_tensors[key]:
+                metrics_history[key] = torch.stack(metrics_tensors[key]).cpu().numpy().tolist()
         
         # 4. Finalize with best displacement
         # -----------------------------------
