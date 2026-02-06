@@ -7,6 +7,11 @@ on:
         description: 'Run with debug logging'
         required: false
         default: 'false'
+      skip_teardown:
+        description: '⚠️ Skip Teardown (Keep server RUNNING)?'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   setup-heavy-instance:
@@ -114,7 +119,7 @@ jobs:
 
   teardown-heavy-instance:
     needs: [heavy-validation, setup-heavy-instance]
-    if: always()
+    if: always() && inputs.skip_teardown != true
     runs-on: linux_cpu_light
     steps:
       - name: Manual Checkout

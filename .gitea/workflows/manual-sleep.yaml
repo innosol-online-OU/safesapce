@@ -1,0 +1,28 @@
+name: 😴 Manual Sleep (Force Shutdown)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  force-sleep:
+    runs-on: linux_cpu_light
+    steps:
+      - name: Manual Checkout
+        run: |
+          echo "⬇️ Cloning repository manually..."
+          git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
+
+      - name: Sleep Heavy Server
+        env:
+          OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
+          OVH_APP_SECRET: ${{ secrets.OVH_APP_SECRET }}
+          OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+          OVH_PROJECT_ID: ${{ secrets.OVH_PROJECT_ID }}
+          OVH_INSTANCE_ID: ${{ secrets.OVH_INSTANCE_ID }}
+        run: |
+          echo "😴 Force Suspending Heavy Instance..."
+          tar -cf - scripts/maintenance/ovh_controller.py | docker run --rm --network host -i \
+            -w /app \
+            -e OVH_APP_KEY -e OVH_APP_SECRET -e OVH_CONSUMER_KEY -e OVH_PROJECT_ID -e OVH_INSTANCE_ID \
+            python:3.11-slim \
+            bash -c "tar -xf - && pip install ovh && python scripts/maintenance/ovh_controller.py sleep"
