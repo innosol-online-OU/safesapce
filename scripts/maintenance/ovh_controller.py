@@ -46,8 +46,8 @@ def wake_up():
     
     # Wait Loop
     # Unshelving can take time depending on disk size and OVH load.
-    # We allow up to 15 minutes (90 * 10s).
-    for i in range(90): 
+    # We allow up to 60 minutes (360 * 10s).
+    for i in range(360): 
         new_status = get_status()
         if new_status == 'ACTIVE':
             print("✅ Server is UP! Waiting 60s for network/docker...")
