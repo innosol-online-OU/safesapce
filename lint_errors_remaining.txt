@@ -1,0 +1,233 @@
+E722 Do not use bare `except`
+   --> invisible_core\attacks\ghost_mesh.py:540:13
+    |
+538 |                         semantic_landmarks[:, 1] /= H
+539 |                         logger.info("GhostMesh: Semantic Landmarks Extracted.")
+540 |             except:
+    |             ^^^^^^
+541 |                 pass
+    |
+
+F841 Local variable `center_y1` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:828:22
+    |
+826 |                  if user_mask is None:
+827 |                      # Create generic oval mask in center
+828 |                      center_y1, center_x1 = H // 4, W // 4
+    |                      ^^^^^^^^^
+829 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+830 |                      # Create oval mask using indices
+    |
+help: Remove assignment to unused variable `center_y1`
+
+F841 Local variable `center_x1` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:828:33
+    |
+826 |                  if user_mask is None:
+827 |                      # Create generic oval mask in center
+828 |                      center_y1, center_x1 = H // 4, W // 4
+    |                                 ^^^^^^^^^
+829 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+830 |                      # Create oval mask using indices
+    |
+help: Remove assignment to unused variable `center_x1`
+
+F841 Local variable `center_y2` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:829:22
+    |
+827 |                      # Create generic oval mask in center
+828 |                      center_y1, center_x1 = H // 4, W // 4
+829 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+    |                      ^^^^^^^^^
+830 |                      # Create oval mask using indices
+831 |                      y_idx = torch.linspace(-1, 1, H).view(H, 1).to(self.device)
+    |
+help: Remove assignment to unused variable `center_y2`
+
+F841 Local variable `center_x2` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:829:33
+    |
+827 |                      # Create generic oval mask in center
+828 |                      center_y1, center_x1 = H // 4, W // 4
+829 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+    |                                 ^^^^^^^^^
+830 |                      # Create oval mask using indices
+831 |                      y_idx = torch.linspace(-1, 1, H).view(H, 1).to(self.device)
+    |
+help: Remove assignment to unused variable `center_x2`
+
+F841 Local variable `steps` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:930:9
+    |
+929 |         # 0. Parse Config
+930 |         steps = config.optimization_steps if config else 30
+    |         ^^^^^
+931 |         strength_mult = (config.strength / 50.0) if config else 1.0
+    |
+help: Remove assignment to unused variable `steps`
+
+F821 Undefined name `target_identity`
+   --> invisible_core\attacks\latent_cloak.py:976:66
+    |
+974 |         # --- STEP 3: INITIALIZE CRITICS ---
+975 |         CLIPCritic = _get_clip_critic()
+976 |         clip_critic = CLIPCritic(device=self.device, target_text=target_identity)
+    |                                                                  ^^^^^^^^^^^^^^^
+977 |         
+978 |         ssim_loss_fn = SSIMLoss(window_size=11).to(self.device)
+    |
+
+E722 Do not use bare `except`
+    --> invisible_core\attacks\latent_cloak.py:1185:13
+     |
+1183 |             try:
+1184 |                 res_val = int(resolution)
+1185 |             except: 
+     |             ^^^^^^
+1186 |                 pass
+     |
+
+E701 Multiple statements on one line (colon)
+    --> invisible_core\attacks\latent_cloak.py:1289:34
+     |
+1288 |             # Momentum
+1289 |             if delta.grad is None: continue
+     |                                  ^
+1290 |             grad = delta.grad.data
+1291 |             grad_norm = torch.norm(grad, p=1)
+     |
+
+F841 Local variable `effective_tv` is assigned to but never used
+    --> invisible_core\attacks\latent_cloak.py:1654:9
+     |
+1652 | …     # User feedback: "Higher strength = lower changes" -> TV was overpowering.
+1653 | …     # Fix: effective_tv = tv_weight (constant)
+1654 | …     effective_tv = tv_weight 
+     |       ^^^^^^^^^^^^
+1655 | …     
+1656 | …     logger.info(f"[LiquidWarp V2d] Steps: {num_steps} | Grid: {grid_size}x{grid_size} | Identity*25 | TV*0.01 | Vert*10 | FocalBia…
+     |
+help: Remove assignment to unused variable `effective_tv`
+
+F841 Local variable `pixel_diff` is assigned to but never used
+    --> invisible_core\attacks\latent_cloak.py:1742:17
+     |
+1741 | …     if step % 10 == 0:
+1742 | …         pixel_diff = (warped - img_tensor).abs().mean().item()
+     |           ^^^^^^^^^^
+1743 | …         print(f"LiquidV2d Step {step}/{num_steps} | AvgSim: {avg_sim.item():.4f} | TV: {tv_loss.item():.4f} | DispMax: {disp_max:.…
+     |
+help: Remove assignment to unused variable `pixel_diff`
+
+F841 Local variable `attention_scores` is assigned to but never used
+  --> invisible_core\attacks\legacy\attention_hijack.py:71:9
+   |
+69 |         # Disclaimer: actual hooking depends heavily on specific timm model structure.
+70 |         # This is a conceptual implementation assuming we can access attention.
+71 |         attention_scores = []
+   |         ^^^^^^^^^^^^^^^^
+72 |         def attn_hook(module, input, output):
+73 |             # output might be (B, N, N) attention matrix or tuple
+   |
+help: Remove assignment to unused variable `attention_scores`
+
+E722 Do not use bare `except`
+  --> invisible_core\critics\qwen_critic.py:39:9
+   |
+37 |              else:
+38 |                  print("[QwenCritic] LM Studio not found. Using Local Model.")
+39 |         except:
+   |         ^^^^^^
+40 |              print("[QwenCritic] LM Studio not reachable. Using Local Model.")
+   |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:276:44
+    |
+274 |                 # Encode Both
+275 |                 def enc(p):
+276 |                     with open(p, "rb") as f: return base64.b64encode(f.read()).decode('utf-8')
+    |                                            ^
+277 |                 
+278 |                 b64_ref = enc(reference_path)
+    |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\session_manager.py:77:42
+   |
+76 |                 # Keep buffer small? 
+77 |                 if len(self._logs) > 1000: self._logs.pop(0)
+   |                                          ^
+78 |             except Exception:
+79 |                 pass
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\session_manager.py:94:19
+   |
+93 |         img = self.get_current_image()
+94 |         if not img: return
+   |                   ^
+95 |         
+96 |         # Get reference for pairwise comparison
+   |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\session_manager.py:174:27
+    |
+172 |     def get_components(self) -> Dict[str, Any]:
+173 |         """Get visualization components (Noise, Warp)."""
+174 |         if not self._state: return {}
+    |                           ^
+175 |         
+176 |         results = {}
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\session_manager.py:220:19
+    |
+218 |         """Get current image as PNG bytes for download."""
+219 |         img = self.get_current_image()
+220 |         if not img: return None
+    |                   ^
+221 |         from io import BytesIO
+222 |         b = BytesIO()
+    |
+
+F401 `transformers.CLIPTokenizer` imported but unused; consider using `importlib.util.find_spec` to test for availability
+  --> invisible_core\validation\validator.py:14:56
+   |
+12 |     import lpips
+13 |     from deepface import DeepFace
+14 |     from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
+   |                                                        ^^^^^^^^^^^^^
+15 | except ImportError:
+16 |     print("Warning: Validator dependencies missing (lpips, deepface, transformers).")
+   |
+help: Remove unused import: `transformers.CLIPTokenizer`
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\validation\validator.py:119:21
+    |
+117 |         # Let's treat raw score drop.
+118 |         
+119 |         if sim1 == 0: return 0.0
+    |                     ^
+120 |         pct_drop = ((sim1 - sim2) / sim1) * 100
+121 |         return pct_drop
+    |
+
+F841 Local variable `logits_per_image` is assigned to but never used
+  --> invisible_core\validation\validator_stealth.py:26:13
+   |
+24 |             outputs = self.clip_model(**inputs)
+25 |             # logits_per_image is proportional to cosine similarity
+26 |             logits_per_image = outputs.logits_per_image # this is (N, 1)
+   |             ^^^^^^^^^^^^^^^^
+27 |             # OpenAI clip usually outputs un-normalized logits which are scaled cosine similarities.
+28 |             # To get raw cosine similarity, we can do manual:
+   |
+help: Remove assignment to unused variable `logits_per_image`
+
+Found 21 errors.
+No fixes available (9 hidden fixes can be enabled with the `--unsafe-fixes` option).

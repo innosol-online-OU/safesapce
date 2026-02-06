@@ -1,0 +1,927 @@
+E722 Do not use bare `except`
+  --> app_interface\app.py:24:5
+   |
+22 |     try:
+23 |         app = insightface.app.FaceAnalysis(name='buffalo_l', providers=['CUDAExecutionProvider'])
+24 |     except:
+   |     ^^^^^^
+25 |         app = insightface.app.FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
+26 |     app.prepare(ctx_id=0, det_size=(640, 640))
+   |
+
+E701 Multiple statements on one line (colon)
+   --> app_interface\app.py:614:53
+    |
+612 |                         else:
+613 |                             st.warning("No targets detected.")
+614 |                         if os.path.exists(temp_path): os.remove(temp_path)
+    |                                                     ^
+615 |                 with col_i2:
+616 |                     if st.button("🗑️ Clear Mask"):
+    |
+
+E701 Multiple statements on one line (colon)
+   --> app_interface\app.py:773:58
+    |
+771 |                              return f"Error: {str(e)}"
+772 |                          finally:
+773 |                              if os.path.exists(tmp_probe): os.remove(tmp_probe)
+    |                                                          ^
+774 |                              if os.path.exists(tmp_ref): os.remove(tmp_ref)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> app_interface\app.py:774:56
+    |
+772 |                          finally:
+773 |                              if os.path.exists(tmp_probe): os.remove(tmp_probe)
+774 |                              if os.path.exists(tmp_ref): os.remove(tmp_ref)
+    |                                                        ^
+775 |                              
+776 |                      live_manager = get_live_manager()
+    |
+
+E741 Ambiguous variable name: `l`
+   --> app_interface\app.py:938:57
+    |
+936 | …                     # Combined legend
+937 | …                     lines = [line1, line2]
+938 | …                     labels = [l.get_label() for l in lines]
+    |                                                   ^
+939 | …                     ax2.legend(lines, labels, loc='upper left', facecolor='#1e1e24', edgecolor='white', labelcolor='white')
+    |
+
+E741 Ambiguous variable name: `l`
+    --> app_interface\app.py:1002:57
+     |
+1001 | …                     lines = [line1, line2]
+1002 | …                     labels = [l.get_label() for l in lines]
+     |                                                   ^
+1003 | …                     ax2.legend(lines, labels, loc='upper left', facecolor='#1e1e24', edgecolor='white', labelcolor='white')
+     |
+
+E722 Do not use bare `except`
+    --> app_interface\app.py:1120:22
+     |
+1118 |                      try:
+1119 |                         st.session_state.history[-1]["mask"] = Image.open(mask_to_load).copy()
+1120 |                      except:
+     |                      ^^^^^^
+1121 |                         pass
+1122 |                  if len(st.session_state.history) > 5:
+     |
+
+E701 Multiple statements on one line (colon)
+  --> app_interface\views\live_dashboard.py:79:37
+   |
+77 |         # Re-implement buttons...
+78 |         if status == "RUNNING":
+79 |             if c1.button("⏸️ PAUSE"): manager.pause(); st.rerun()
+   |                                    ^
+80 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+81 |         elif status == "PAUSED":
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> app_interface\views\live_dashboard.py:79:54
+   |
+77 |         # Re-implement buttons...
+78 |         if status == "RUNNING":
+79 |             if c1.button("⏸️ PAUSE"): manager.pause(); st.rerun()
+   |                                                     ^
+80 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+81 |         elif status == "PAUSED":
+   |
+
+E701 Multiple statements on one line (colon)
+  --> app_interface\views\live_dashboard.py:80:35
+   |
+78 |         if status == "RUNNING":
+79 |             if c1.button("⏸️ PAUSE"): manager.pause(); st.rerun()
+80 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+   |                                    ^
+81 |         elif status == "PAUSED":
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> app_interface\views\live_dashboard.py:80:51
+   |
+78 |         if status == "RUNNING":
+79 |             if c1.button("⏸️ PAUSE"): manager.pause(); st.rerun()
+80 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+   |                                                    ^
+81 |         elif status == "PAUSED":
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+   |
+
+E701 Multiple statements on one line (colon)
+  --> app_interface\views\live_dashboard.py:82:38
+   |
+80 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+81 |         elif status == "PAUSED":
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+   |                                     ^
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> app_interface\views\live_dashboard.py:82:56
+   |
+80 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+81 |         elif status == "PAUSED":
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+   |                                                       ^
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+   |
+
+E701 Multiple statements on one line (colon)
+  --> app_interface\views\live_dashboard.py:83:35
+   |
+81 |         elif status == "PAUSED":
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+   |                                    ^
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+85 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> app_interface\views\live_dashboard.py:83:52
+   |
+81 |         elif status == "PAUSED":
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+   |                                                     ^
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+85 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+   |
+
+E701 Multiple statements on one line (colon)
+  --> app_interface\views\live_dashboard.py:84:36
+   |
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+   |                                     ^
+85 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+86 |         elif status in ["COMPLETED", "STOPPED"]:
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> app_interface\views\live_dashboard.py:84:66
+   |
+82 |             if c1.button("▶️ RESUME"): manager.resume(); st.rerun()
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+   |                                                                   ^
+85 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+86 |         elif status in ["COMPLETED", "STOPPED"]:
+   |
+
+E701 Multiple statements on one line (colon)
+  --> app_interface\views\live_dashboard.py:85:35
+   |
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+85 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+   |                                    ^
+86 |         elif status in ["COMPLETED", "STOPPED"]:
+87 |             st.success("Sequence Complete.")
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> app_interface\views\live_dashboard.py:85:51
+   |
+83 |             if c2.button("👟 STEP"): manager.step(1); st.rerun()
+84 |             if c3.button("🔍 CHECK"): manager.trigger_validation(); st.rerun()
+85 |             if c4.button("🛑 STOP"): manager.stop(); st.rerun()
+   |                                                    ^
+86 |         elif status in ["COMPLETED", "STOPPED"]:
+87 |             st.success("Sequence Complete.")
+   |
+
+E701 Multiple statements on one line (colon)
+   --> app_interface\views\live_dashboard.py:134:44
+    |
+132 |                 ax.grid(color='#374151', linestyle=':', linewidth=0.5)
+133 |                 # Spines
+134 |                 for s in ax.spines.values(): s.set_visible(False)
+    |                                            ^
+135 |                 ax.spines['left'].set_visible(True); ax.spines['left'].set_color('#374151')
+136 |                 ax.spines['bottom'].set_visible(True); ax.spines['bottom'].set_color('#374151')
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> app_interface\views\live_dashboard.py:135:52
+    |
+133 |                 # Spines
+134 |                 for s in ax.spines.values(): s.set_visible(False)
+135 |                 ax.spines['left'].set_visible(True); ax.spines['left'].set_color('#374151')
+    |                                                    ^
+136 |                 ax.spines['bottom'].set_visible(True); ax.spines['bottom'].set_color('#374151')
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> app_interface\views\live_dashboard.py:136:54
+    |
+134 |                 for s in ax.spines.values(): s.set_visible(False)
+135 |                 ax.spines['left'].set_visible(True); ax.spines['left'].set_color('#374151')
+136 |                 ax.spines['bottom'].set_visible(True); ax.spines['bottom'].set_color('#374151')
+    |                                                      ^
+137 |                 
+138 |                 st.pyplot(fig)
+    |
+
+E722 Do not use bare `except`
+   --> invisible_core\attacks\ghost_mesh.py:376:13
+    |
+374 |                 else:
+375 |                     face_mask.fill_(1.0) # Fallback to full image
+376 |             except:
+    |             ^^^^^^
+377 |                 face_mask.fill_(1.0)
+378 |         else:
+    |
+
+E722 Do not use bare `except`
+   --> invisible_core\attacks\ghost_mesh.py:540:13
+    |
+538 |                         semantic_landmarks[:, 1] /= H
+539 |                         logger.info("GhostMesh: Semantic Landmarks Extracted.")
+540 |             except:
+    |             ^^^^^^
+541 |                 pass
+    |
+
+F401 `insightface` imported but unused; consider using `importlib.util.find_spec` to test for availability
+  --> invisible_core\attacks\latent_cloak.py:76:12
+   |
+75 | try:
+76 |     import insightface
+   |            ^^^^^^^^^^^
+77 |     from insightface.app import FaceAnalysis
+78 |     # SigLIP dependency
+   |
+help: Remove unused import: `insightface`
+
+F401 `timm` imported but unused; consider using `importlib.util.find_spec` to test for availability
+  --> invisible_core\attacks\latent_cloak.py:79:12
+   |
+77 |     from insightface.app import FaceAnalysis
+78 |     # SigLIP dependency
+79 |     import timm
+   |            ^^^^
+80 | except ImportError:
+81 |     logger.warning("Warning: InsightFace/Timm not found. LatentCloak will fail.")
+   |
+help: Remove unused import: `timm`
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\attacks\latent_cloak.py:168:33
+    |
+166 |     def _load_detectors(self):
+167 |         """Phase 15.1: Lazy load only the lightweight face detector."""
+168 |         if self.detectors_loaded: return
+    |                                 ^
+169 |         
+170 |         try:
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\attacks\latent_cloak.py:307:34
+    |
+305 |         """
+306 |         logger.info(f"[LatentCloak] Protect called on {image_path}...")
+307 |         if not self.models_loaded: return Image.open(image_path)
+    |                                  ^
+308 |         if config is None: config = ProtectionConfig()
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\attacks\latent_cloak.py:308:26
+    |
+306 |         logger.info(f"[LatentCloak] Protect called on {image_path}...")
+307 |         if not self.models_loaded: return Image.open(image_path)
+308 |         if config is None: config = ProtectionConfig()
+    |                          ^
+309 |             
+310 |         original_pil = Image.open(image_path).convert("RGB")
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\attacks\latent_cloak.py:312:24
+    |
+310 |         original_pil = Image.open(image_path).convert("RGB")
+311 |         crop_pil, bbox, face_mask_np = self.detect_and_crop(original_pil)
+312 |         if not crop_pil: return original_pil
+    |                        ^
+313 |         
+314 |         # Dynamic parameter mapping based on strength
+    |
+
+F841 Local variable `num_steps` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:735:9
+    |
+734 |         # --- PHASE 10 PARAMETERS ---
+735 |         num_steps = 60          # Slower convergence for cleaner visuals
+    |         ^^^^^^^^^
+736 |         target_identity = "Elon Musk"
+    |
+help: Remove assignment to unused variable `num_steps`
+
+F841 Local variable `eps_smooth` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:739:9
+    |
+738 |         # Adaptive Epsilon Limits
+739 |         eps_smooth = 0.02       # Max perturbation on skin (invisible)
+    |         ^^^^^^^^^^
+740 |         eps_texture = 0.20      # Max perturbation on hair/edges (aggressive)
+    |
+help: Remove assignment to unused variable `eps_smooth`
+
+F841 Local variable `eps_texture` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:740:9
+    |
+738 |         # Adaptive Epsilon Limits
+739 |         eps_smooth = 0.02       # Max perturbation on skin (invisible)
+740 |         eps_texture = 0.20      # Max perturbation on hair/edges (aggressive)
+    |         ^^^^^^^^^^^
+741 |         
+742 |         # Load image
+    |
+help: Remove assignment to unused variable `eps_texture`
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\attacks\latent_cloak.py:779:47
+    |
+777 |                         m = results[0].masks.data[i].cpu().numpy()
+778 |                         m = cv2.resize(m, (W, H), interpolation=cv2.INTER_NEAREST)
+779 |                         if person_mask is None: person_mask = m
+    |                                               ^
+780 |                         else: person_mask = np.maximum(person_mask, m)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\attacks\latent_cloak.py:780:29
+    |
+778 |                         m = cv2.resize(m, (W, H), interpolation=cv2.INTER_NEAREST)
+779 |                         if person_mask is None: person_mask = m
+780 |                         else: person_mask = np.maximum(person_mask, m)
+    |                             ^
+781 |             
+782 |             if person_mask is not None:
+    |
+
+F841 Local variable `center_y1` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:829:22
+    |
+827 |                  if user_mask is None:
+828 |                      # Create generic oval mask in center
+829 |                      center_y1, center_x1 = H // 4, W // 4
+    |                      ^^^^^^^^^
+830 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+831 |                      # Create oval mask using indices
+    |
+help: Remove assignment to unused variable `center_y1`
+
+F841 Local variable `center_x1` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:829:33
+    |
+827 |                  if user_mask is None:
+828 |                      # Create generic oval mask in center
+829 |                      center_y1, center_x1 = H // 4, W // 4
+    |                                 ^^^^^^^^^
+830 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+831 |                      # Create oval mask using indices
+    |
+help: Remove assignment to unused variable `center_x1`
+
+F841 Local variable `center_y2` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:830:22
+    |
+828 |                      # Create generic oval mask in center
+829 |                      center_y1, center_x1 = H // 4, W // 4
+830 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+    |                      ^^^^^^^^^
+831 |                      # Create oval mask using indices
+832 |                      y_idx = torch.linspace(-1, 1, H).view(H, 1).to(self.device)
+    |
+help: Remove assignment to unused variable `center_y2`
+
+F841 Local variable `center_x2` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:830:33
+    |
+828 |                      # Create generic oval mask in center
+829 |                      center_y1, center_x1 = H // 4, W // 4
+830 |                      center_y2, center_x2 = H * 3 // 4, W * 3 // 4
+    |                                 ^^^^^^^^^
+831 |                      # Create oval mask using indices
+832 |                      y_idx = torch.linspace(-1, 1, H).view(H, 1).to(self.device)
+    |
+help: Remove assignment to unused variable `center_x2`
+
+F841 Local variable `steps` is assigned to but never used
+   --> invisible_core\attacks\latent_cloak.py:931:9
+    |
+930 |         # 0. Parse Config
+931 |         steps = config.optimization_steps if config else 30
+    |         ^^^^^
+932 |         strength_mult = (config.strength / 50.0) if config else 1.0
+    |
+help: Remove assignment to unused variable `steps`
+
+E722 Do not use bare `except`
+    --> invisible_core\attacks\latent_cloak.py:1186:13
+     |
+1184 |             try:
+1185 |                 res_val = int(resolution)
+1186 |             except: 
+     |             ^^^^^^
+1187 |                 pass
+     |
+
+E701 Multiple statements on one line (colon)
+    --> invisible_core\attacks\latent_cloak.py:1290:34
+     |
+1289 |             # Momentum
+1290 |             if delta.grad is None: continue
+     |                                  ^
+1291 |             grad = delta.grad.data
+1292 |             grad_norm = torch.norm(grad, p=1)
+     |
+
+F841 Local variable `effective_tv` is assigned to but never used
+    --> invisible_core\attacks\latent_cloak.py:1655:9
+     |
+1653 | …     # User feedback: "Higher strength = lower changes" -> TV was overpowering.
+1654 | …     # Fix: effective_tv = tv_weight (constant)
+1655 | …     effective_tv = tv_weight 
+     |       ^^^^^^^^^^^^
+1656 | …     
+1657 | …     logger.info(f"[LiquidWarp V2d] Steps: {num_steps} | Grid: {grid_size}x{grid_size} | Identity*25 | TV*0.01 | Vert*10 | FocalBia…
+     |
+help: Remove assignment to unused variable `effective_tv`
+
+F841 Local variable `pixel_diff` is assigned to but never used
+    --> invisible_core\attacks\latent_cloak.py:1743:17
+     |
+1742 | …     if step % 10 == 0:
+1743 | …         pixel_diff = (warped - img_tensor).abs().mean().item()
+     |           ^^^^^^^^^^
+1744 | …         print(f"LiquidV2d Step {step}/{num_steps} | AvgSim: {avg_sim.item():.4f} | TV: {tv_loss.item():.4f} | DispMax: {disp_max:.…
+     |
+help: Remove assignment to unused variable `pixel_diff`
+
+F841 Local variable `attention_scores` is assigned to but never used
+  --> invisible_core\attacks\legacy\attention_hijack.py:71:9
+   |
+69 |         # Disclaimer: actual hooking depends heavily on specific timm model structure.
+70 |         # This is a conceptual implementation assuming we can access attention.
+71 |         attention_scores = []
+   |         ^^^^^^^^^^^^^^^^
+72 |         def attn_hook(module, input, output):
+73 |             # output might be (B, N, N) attention matrix or tuple
+   |
+help: Remove assignment to unused variable `attention_scores`
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\legacy\glaze.py:39:13
+   |
+37 |                 self.model_loaded = True
+38 |                 self.features_only = False
+39 |             except:
+   |             ^^^^^^
+40 |                 self.model_loaded = False
+41 |         else:
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\attacks\legacy\glaze.py:83:48
+   |
+82 |         alien_features = self.model(alien_style_input)
+83 |         if not isinstance(alien_features, list): alien_features = [alien_features]
+   |                                                ^
+84 |         
+85 |         target_grams = [self.gram_matrix(f).detach() for f in alien_features]
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\attacks\legacy\glaze.py:93:50
+   |
+92 |                 features = self.model(adv_input)
+93 |                 if not isinstance(features, list): features = [features]
+   |                                                  ^
+94 |                 
+95 |                 style_loss = 0
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\attacks\legacy\style_cloak.py:62:48
+   |
+60 |         alien_style_input = torch.randn_like(original_tensor).to(self.device)
+61 |         alien_features = self.model(alien_style_input)
+62 |         if not isinstance(alien_features, list): alien_features = [alien_features]
+   |                                                ^
+63 |         target_grams = [self.gram_matrix(f).detach() for f in alien_features]
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\attacks\legacy\style_cloak.py:70:46
+   |
+69 |             features = self.model(adv_input)
+70 |             if not isinstance(features, list): features = [features]
+   |                                              ^
+71 |             
+72 |             style_loss = 0
+   |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\legacy\text_injector.py:40:9
+   |
+38 |             font_path = "/app/app_interface/assets/OpenSans-Bold.ttf"
+39 |             font = ImageFont.truetype(font_path, font_size)
+40 |         except:
+   |         ^^^^^^
+41 |             try:
+42 |                 font = ImageFont.truetype("arial.ttf", font_size)
+   |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\legacy\text_injector.py:43:13
+   |
+41 |             try:
+42 |                 font = ImageFont.truetype("arial.ttf", font_size)
+43 |             except:
+   |             ^^^^^^
+44 |                 font = ImageFont.load_default()
+   |
+
+E722 Do not use bare `except`
+   --> invisible_core\attacks\neural_stego.py:227:9
+    |
+225 |             if length > 1000:  # Sanity check
+226 |                 return ""
+227 |         except:
+    |         ^^^^^^
+228 |             return ""
+    |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\selective_ensemble.py:92:13
+   |
+90 |             try:
+91 |                 self.model.cpu()
+92 |             except:
+   |             ^^^^^^
+93 |                 pass
+94 |             del self.model
+   |
+
+E722 Do not use bare `except`
+   --> invisible_core\attacks\selective_ensemble.py:104:13
+    |
+102 |             try:
+103 |                 self.feature_extractor.cpu()
+104 |             except:
+    |             ^^^^^^
+105 |                 pass
+106 |             del self.feature_extractor
+    |
+
+E722 Do not use bare `except`
+   --> invisible_core\attacks\selective_ensemble.py:128:9
+    |
+126 |         try:
+127 |             self.unload()
+128 |         except:
+    |         ^^^^^^
+129 |             pass
+    |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\trojan_shield.py:25:9
+   |
+23 |             # Linux path often has DejaVuSans or similar
+24 |             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+25 |         except:
+   |         ^^^^^^
+26 |             try:
+27 |                  font = ImageFont.truetype("arial.ttf", font_size)
+   |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\trojan_shield.py:28:13
+   |
+26 |             try:
+27 |                  font = ImageFont.truetype("arial.ttf", font_size)
+28 |             except:
+   |             ^^^^^^
+29 |                  font = ImageFont.load_default()
+   |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\trojan_shield.py:40:9
+   |
+38 |             text_w = bbox[2] - bbox[0]
+39 |             text_h = bbox[3] - bbox[1]
+40 |         except:
+   |         ^^^^^^
+41 |              # Fallback for older Pillow
+42 |              text_w = font_size * len(message) * 0.5
+   |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\trojan_shield.py:85:9
+   |
+83 |              # Try Linux path first (common in Docker)
+84 |              font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+85 |         except:
+   |         ^^^^^^
+86 |              try:
+87 |                  font = ImageFont.truetype("arialbd.ttf", font_size)
+   |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\trojan_shield.py:88:14
+   |
+86 |              try:
+87 |                  font = ImageFont.truetype("arialbd.ttf", font_size)
+88 |              except:
+   |              ^^^^^^
+89 |                  font = ImageFont.load_default()
+   |
+
+E722 Do not use bare `except`
+  --> invisible_core\attacks\trojan_shield.py:96:9
+   |
+94 |             text_w = bbox[2] - bbox[0]
+95 |             text_h = bbox[3] - bbox[1]
+96 |         except:
+   |         ^^^^^^
+97 |             text_w = font_size * len(payload) * 0.6
+98 |             text_h = font_size * 1.5
+   |
+
+F841 Local variable `qwen_uses_api` is assigned to but never used
+   --> invisible_core\cloaking.py:128:17
+    |
+126 |                 from invisible_core.critics.qwen_critic import QwenCritic
+127 |                 test_critic = QwenCritic()
+128 |                 qwen_uses_api = test_critic.use_api
+    |                 ^^^^^^^^^^^^^
+129 |                 del test_critic
+    |
+help: Remove assignment to unused variable `qwen_uses_api`
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\cloaking.py:420:26
+    |
+418 |                 metrics["Configuration"] = f"Strength: {current_strength} | Face Boost: {'ON' if face_boost else 'OFF'}"
+419 |                 metrics["Adversarial Validation"] = "Passed (Qwen-VL Approved)" if passed else f"Failed ({reason})"
+420 |             if compliance: metrics["Layers Applied"].append("Stego-Compliance")
+    |                          ^
+421 |
+422 |             return True, heatmap_path, metrics
+    |
+
+E722 Do not use bare `except`
+  --> invisible_core\critics\qwen_critic.py:39:9
+   |
+37 |              else:
+38 |                  print("[QwenCritic] LM Studio not found. Using Local Model.")
+39 |         except:
+   |         ^^^^^^
+40 |              print("[QwenCritic] LM Studio not reachable. Using Local Model.")
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\critics\qwen_critic.py:43:23
+   |
+42 |     def load(self):
+43 |         if self.loaded: return
+   |                       ^
+44 |         
+45 |         # Fallback to Local Transformer
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\critics\qwen_critic.py:75:24
+   |
+73 |     def unload(self):
+74 |         """Free VRAM when not in use"""
+75 |         if self.use_api: return 
+   |                        ^
+76 |         
+77 |         if self.model:
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\critics\qwen_critic.py:92:48
+   |
+91 |     def critique(self, image_path: str, target_name: str = "Elon Musk") -> tuple[bool, str, float]:
+92 |         if not self.loaded and not self.use_api: self.load()
+   |                                                ^
+93 |         if not self.loaded and not self.use_api: return True, "Validator Failed to Load", 0.0
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\critics\qwen_critic.py:93:48
+   |
+91 |     def critique(self, image_path: str, target_name: str = "Elon Musk") -> tuple[bool, str, float]:
+92 |         if not self.loaded and not self.use_api: self.load()
+93 |         if not self.loaded and not self.use_api: return True, "Validator Failed to Load", 0.0
+   |                                                ^
+94 |         
+95 |         # Phase 12: Cognitive Interview Prompt
+   |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:204:39
+    |
+202 |             lines = output_text.strip().split('\n')
+203 |             for line in lines:
+204 |                 if "Identity:" in line: metrics["identity"] = line.split("Identity:", 1)[1].strip()
+    |                                       ^
+205 |                 if "Confidence:" in line: 
+206 |                     # Extract number
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:209:29
+    |
+207 |                     import re
+208 |                     match = re.search(r"(\d+)", line)
+209 |                     if match: metrics["confidence"] = int(match.group(1))
+    |                             ^
+210 |                 if "Artifacts:" in line: metrics["artifacts"] = line.split("Artifacts:", 1)[1].strip()
+211 |                 if "Realism:" in line: metrics["realism"] = line.split("Realism:", 1)[1].strip()
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:210:40
+    |
+208 |                     match = re.search(r"(\d+)", line)
+209 |                     if match: metrics["confidence"] = int(match.group(1))
+210 |                 if "Artifacts:" in line: metrics["artifacts"] = line.split("Artifacts:", 1)[1].strip()
+    |                                        ^
+211 |                 if "Realism:" in line: metrics["realism"] = line.split("Realism:", 1)[1].strip()
+212 |         except Exception as e:
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:211:38
+    |
+209 |                     if match: metrics["confidence"] = int(match.group(1))
+210 |                 if "Artifacts:" in line: metrics["artifacts"] = line.split("Artifacts:", 1)[1].strip()
+211 |                 if "Realism:" in line: metrics["realism"] = line.split("Realism:", 1)[1].strip()
+    |                                      ^
+212 |         except Exception as e:
+213 |             print(f"[QwenCritic] Parsing Error: {e}")
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:239:48
+    |
+237 |            (passed, reason, similarity_score)
+238 |         """
+239 |         if not self.loaded and not self.use_api: self.load()
+    |                                                ^
+240 |         if not self.loaded and not self.use_api: return True, "Validator Failed to Load", 0.0
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:240:48
+    |
+238 |         """
+239 |         if not self.loaded and not self.use_api: self.load()
+240 |         if not self.loaded and not self.use_api: return True, "Validator Failed to Load", 0.0
+    |                                                ^
+241 |         
+242 |         prompt = (
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:266:44
+    |
+264 |                 # Encode Both
+265 |                 def enc(p):
+266 |                     with open(p, "rb") as f: return base64.b64encode(f.read()).decode('utf-8')
+    |                                            ^
+267 |                 
+268 |                 b64_ref = enc(reference_path)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:351:36
+    |
+349 |                 if "Match:" in line: 
+350 |                     val = line.split("Match:", 1)[1].strip().lower()
+351 |                     if "yes" in val: is_match = True
+    |                                    ^
+352 |                 if "Confidence:" in line:
+353 |                     import re
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\critics\qwen_critic.py:355:29
+    |
+353 |                     import re
+354 |                     match = re.search(r"(\d+)", line)
+355 |                     if match: confidence = int(match.group(1))
+    |                             ^
+356 |                 if "Manipulation:" in line:
+357 |                     manipulation = line.split("Manipulation:", 1)[1].strip()
+    |
+
+E722 Do not use bare `except`
+   --> invisible_core\critics\qwen_critic.py:358:9
+    |
+356 |                 if "Manipulation:" in line:
+357 |                     manipulation = line.split("Manipulation:", 1)[1].strip()
+358 |         except:
+    |         ^^^^^^
+359 |             pass
+    |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\session_manager.py:77:42
+   |
+76 |                 # Keep buffer small? 
+77 |                 if len(self._logs) > 1000: self._logs.pop(0)
+   |                                          ^
+78 |             except Exception:
+79 |                 pass
+   |
+
+E701 Multiple statements on one line (colon)
+  --> invisible_core\session_manager.py:94:19
+   |
+93 |         img = self.get_current_image()
+94 |         if not img: return
+   |                   ^
+95 |         
+96 |         # Get reference for pairwise comparison
+   |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\session_manager.py:174:27
+    |
+172 |     def get_components(self) -> Dict[str, Any]:
+173 |         """Get visualization components (Noise, Warp)."""
+174 |         if not self._state: return {}
+    |                           ^
+175 |         
+176 |         results = {}
+    |
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\session_manager.py:220:19
+    |
+218 |         """Get current image as PNG bytes for download."""
+219 |         img = self.get_current_image()
+220 |         if not img: return None
+    |                   ^
+221 |         from io import BytesIO
+222 |         b = BytesIO()
+    |
+
+F401 `transformers.CLIPTokenizer` imported but unused; consider using `importlib.util.find_spec` to test for availability
+  --> invisible_core\validation\validator.py:14:56
+   |
+12 |     import lpips
+13 |     from deepface import DeepFace
+14 |     from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
+   |                                                        ^^^^^^^^^^^^^
+15 | except ImportError:
+16 |     print("Warning: Validator dependencies missing (lpips, deepface, transformers).")
+   |
+help: Remove unused import: `transformers.CLIPTokenizer`
+
+E701 Multiple statements on one line (colon)
+   --> invisible_core\validation\validator.py:119:21
+    |
+117 |         # Let's treat raw score drop.
+118 |         
+119 |         if sim1 == 0: return 0.0
+    |                     ^
+120 |         pct_drop = ((sim1 - sim2) / sim1) * 100
+121 |         return pct_drop
+    |
+
+F841 Local variable `logits_per_image` is assigned to but never used
+  --> invisible_core\validation\validator_stealth.py:26:13
+   |
+24 |             outputs = self.clip_model(**inputs)
+25 |             # logits_per_image is proportional to cosine similarity
+26 |             logits_per_image = outputs.logits_per_image # this is (N, 1)
+   |             ^^^^^^^^^^^^^^^^
+27 |             # OpenAI clip usually outputs un-normalized logits which are scaled cosine similarities.
+28 |             # To get raw cosine similarity, we can do manual:
+   |
+help: Remove assignment to unused variable `logits_per_image`
+
+Found 86 errors.
+No fixes available (13 hidden fixes can be enabled with the `--unsafe-fixes` option).

@@ -1,0 +1,44 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    restart: always
+    network_mode: host
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__server__DOMAIN=gitea.innosol.online
+      - GITEA__server__ROOT_URL=https://gitea.innosol.online/
+      - GITEA__server__HTTP_ADDR=127.0.0.1
+      - GITEA__server__HTTP_PORT=8080
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__server__SSH_DOMAIN=gitea.innosol.online
+      - GITEA__server__START_SSH_SERVER=false
+    volumes:
+      - ./gitea_data:/data
+
+  runner-light:
+    image: gitea/act_runner:latest
+    container_name: runner-light
+    restart: always
+    network_mode: host
+    environment:
+      - GITEA_INSTANCE_URL=http://localhost:8080
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${RUNNER_TOKEN}
+      - GITEA_RUNNER_NAME=light-runner-d2-2
+      # Add standard ubuntu-latest label to ensure matching
+      - GITEA_RUNNER_LABELS=linux_cpu_light:docker://ghcr.io/catthehacker/ubuntu:act-22.04,ubuntu-latest:docker://ghcr.io/catthehacker/ubuntu:act-22.04
+    depends_on:
+      - gitea
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
