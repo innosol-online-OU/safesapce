@@ -15,10 +15,10 @@ jobs:
           git clone --depth 1 https://git:${{ github.token }}@gitea.innosol.online/${{ github.repository }}.git .
 
       - name: Report Status (Pending)
-        if: always() && secrets.GITHUB_MIRROR_TOKEN != ''
+        if: always() && secrets.MIRROR_TOKEN != ''
         run: |
           python scripts/ci/github_status.py \
-            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --token "${{ secrets.MIRROR_TOKEN }}" \
             --owner "innosol-online-OU" \
             --repo "safesapce" \
             --sha "${{ github.sha }}" \
@@ -50,10 +50,10 @@ jobs:
           args: check invisible_core/ app_interface/ --ignore E501,E402
           
       - name: Report Status (Success)
-        if: success() && secrets.GITHUB_MIRROR_TOKEN != ''
+        if: success() && secrets.MIRROR_TOKEN != ''
         run: |
           python scripts/ci/github_status.py \
-            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --token "${{ secrets.MIRROR_TOKEN }}" \
             --owner "innosol-online-OU" \
             --repo "safesapce" \
             --sha "${{ github.sha }}" \
@@ -63,10 +63,10 @@ jobs:
             --desc "Checks passed!"
 
       - name: Report Status (Failure)
-        if: failure() && secrets.GITHUB_MIRROR_TOKEN != ''
+        if: failure() && secrets.MIRROR_TOKEN != ''
         run: |
           python scripts/ci/github_status.py \
-            --token "${{ secrets.GITHUB_MIRROR_TOKEN }}" \
+            --token "${{ secrets.MIRROR_TOKEN }}" \
             --owner "innosol-online-OU" \
             --repo "safesapce" \
             --sha "${{ github.sha }}" \
