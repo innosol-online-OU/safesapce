@@ -1,0 +1,24 @@
+
+fastapi
+uvicorn
+python-multipart
+Pillow
+numpy
+opencv-python-headless
+requests
+pydantic
+scikit-image
+insightface==0.7.3
+onnxruntime-gpu
+transformers
+accelerate
+diffusers
+safetensors
+lpips
+# invisible_core specific (add what's missing)
+ftfy
+regex
+scipy
+gradio
+streamlit-drawable-canvas
+bitsandbytes
