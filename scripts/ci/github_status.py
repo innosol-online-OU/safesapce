@@ -17,13 +17,14 @@ def report_status(token, owner, repo, sha, state, target_url, context, descripti
     }
     
     print(f"Posting status to {url}...")
+    response = None
     try:
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
         print(f"✅ Status '{state}' reported successfully for {context}.")
     except Exception as e:
         print(f"❌ Failed to report status: {e}")
-        if 'response' in locals():
+        if response is not None:
             print(f"Response: {response.text}")
         sys.exit(1)
 
