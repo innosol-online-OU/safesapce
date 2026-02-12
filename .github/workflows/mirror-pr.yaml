@@ -24,11 +24,19 @@ jobs:
 
       - name: Push to Gitea
         env:
-          TARGET: "https://${{ secrets.GITEA_USER }}:${{ secrets.GITEA_TOKEN }}@${{ secrets.GITEA_HOST }}/${{ secrets.GITEA_USER }}/safespace.git"
+          GITEA_USER: ${{ secrets.GITEA_USER }}
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_HOST: ${{ secrets.GITEA_HOST }}
+          TARGET: "https://${{ secrets.GITEA_HOST }}/${{ secrets.GITEA_USER }}/safespace.git"
           BRANCH: "pr-${{ github.event.number }}"
         run: |
           git config --global user.email "bot@innosol.online"
           git config --global user.name "Bridge Bot"
+
+          # Secure Credential Setup
+          git config --global credential.helper store
+          echo "https://$GITEA_USER:$GITEA_TOKEN@$GITEA_HOST" > ~/.git-credentials
+
           git checkout -b $BRANCH
           echo "🚀 Pushing..."
           git push -f "$TARGET" $BRANCH
@@ -50,7 +58,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const checks = ['Gitea/Fast-Feedback', 'Gitea/Heavy-Validation'];
+            const checks = ['Gitea/Fast-Feedback'];
             for (const c of checks) {
               await github.rest.repos.createCommitStatus({
                 owner: context.repo.owner,
