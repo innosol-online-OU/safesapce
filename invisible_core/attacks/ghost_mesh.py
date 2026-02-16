@@ -506,14 +506,24 @@ class GhostMeshOptimizer(nn.Module):
 
     
     def init_attack(self, image_path: str, face_analysis=None,
-                 strength: int = 75, grid_size: int = 24, num_steps: int = 60,
+                 strength: int = 75, grid_size: int = 24, num_steps: int = 50,  # SPEED: 50 instead of 100
                  warp_noise_balance: float = 0.5, tzone_anchoring: float = 0.8,
                  tv_weight: float = 50, use_jnd: bool = True,
                  lr: float = 0.05,
-                 noise_strength: float = None, warp_strength: float = None) -> Dict:
+                 noise_strength: float = None, warp_strength: float = None,
+                 save_intermediate: bool = False, intermediate_dir: str = ".") -> Dict:
         """Initialize the attack state for granular stepping."""
         # Load image
         orig_pil = Image.open(image_path).convert('RGB')
+        orig_size = orig_pil.size  # Save original size for later upsampling
+        
+        # SPEED: Resolution cap at 1024px (4x-10x speedup for large images)
+        max_dim = 1024
+        if max(orig_pil.size) > max_dim:
+            scale = max_dim / max(orig_pil.size)
+            new_size = (int(orig_pil.width * scale), int(orig_pil.height * scale))
+            orig_pil = orig_pil.resize(new_size, Image.LANCZOS)
+            logger.info(f"[GhostMesh] Resized {orig_size} -> {new_size} for faster optimization.")
         
         # Convert to tensor [1, 3, H, W]
         img_tensor = torch.from_numpy(np.array(orig_pil)).to(self.device).float()
@@ -600,7 +610,10 @@ class GhostMeshOptimizer(nn.Module):
             'noise_eps': noise_eps,
             'warp_limit': warp_limit,
             'actual_tv_weight': actual_tv_weight,
-            'orig_pil_size': orig_pil.size
+            'actual_tv_weight': actual_tv_weight,
+            'orig_pil_size': orig_pil.size,
+            'save_intermediate': save_intermediate,
+            'intermediate_dir': intermediate_dir
         }
     def input_diversity(self, x):
         """
@@ -700,7 +713,7 @@ class GhostMeshOptimizer(nn.Module):
         if total_loss.item() < state['best_loss']:
             state['best_loss'] = total_loss.item()
             state['best_noise'] = delta_noise.data.clone()
-            state['best_warp'] = delta_warp.data.clone()
+            state['best_warp'] = delta_warp_param.data.clone()
             
         state['step'] += 1
         return state
@@ -736,30 +749,48 @@ class GhostMeshOptimizer(nn.Module):
             return Image.fromarray(warped_np)
 
     def optimize(self, image_path: str, face_analysis=None,
-                 strength: int = 75, grid_size: int = 24, num_steps: int = 60,
+                 strength: int = 75, grid_size: int = 24, num_steps: int = 50,  # SPEED: 50 default
                  warp_noise_balance: float = 0.5, tzone_anchoring: float = 0.8,
                  tv_weight: float = 50, use_jnd: bool = True,
                  lr: float = 0.05,
-                 noise_strength: float = None, warp_strength: float = None) -> Tuple[Image.Image, Dict]:
+                 noise_strength: float = None, warp_strength: float = None,
+                 save_intermediate: bool = False) -> Tuple[Image.Image, Dict]:
         """
         Run Ghost-Mesh optimization loop (Legacy Wrapper).
         """
         state = self.init_attack(image_path, face_analysis, strength, grid_size, num_steps,
                                  warp_noise_balance, tzone_anchoring, tv_weight, use_jnd, lr,
-                                 noise_strength, warp_strength)
+                                 noise_strength, warp_strength, save_intermediate)
         
+        import time
+        start_time = time.time()
         logger.info(f"[GhostMesh] Starting optimization: Steps={num_steps}...")
         
         for step in range(num_steps):
+            step_start = time.time()
             state = self.train_step(state)
+            step_duration = time.time() - step_start
             
-            if step % 10 == 0:
+            if step % 1 == 0: # Log every step for debugging
                  # Minimal logging
                  metrics = state['metrics_history']
                  id_loss = metrics['identity_loss'][-1]
                  lpips = metrics['lpips_hinge'][-1]
-                 print(f"GhostMesh Step {step}/{num_steps} | ID: {id_loss:.4f} | LPIPS: {lpips:.4f}", flush=True)
+                 print(f"GhostMesh Step {step}/{num_steps} | ID: {id_loss:.4f} | LPIPS: {lpips:.4f} | Time: {step_duration:.2f}s", flush=True)
                  
+            # Save Intermediate (Every 10 steps)
+            if state['save_intermediate'] and (step % 10 == 0 or step == num_steps - 1):
+                try:
+                    img = self.get_current_image(state)
+                    save_path = f"{state['intermediate_dir']}/step_{step}.png"
+                    img.save(save_path)
+                    print(f"[GhostMesh] Saved intermediate: {save_path}", flush=True)
+                except Exception as e:
+                    print(f"[GhostMesh] Failed to save intermediate: {e}", flush=True)
+                 
+        total_time = time.time() - start_time
+        print(f"[GhostMesh] Optimization Complete. Total Time: {total_time:.2f}s", flush=True)
+
         # Final result (Best)
         result_pil = self.get_current_image(state, use_best=True)
         return result_pil, state['metrics_history']

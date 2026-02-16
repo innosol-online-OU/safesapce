@@ -59,7 +59,14 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+.DS_Store
+Thumbs.db
 nul
+invisible_core.zip
+.cache/
+.pytest_cache/
+history.enc
+
 
 # Deployment Scripts (env-specific)
 *.bat

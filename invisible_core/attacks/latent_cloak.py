@@ -309,6 +309,24 @@ class LatentCloak:
         if config is None:
             config = ProtectionConfig()
             
+        # Dispatch to Ghost-Mesh Protocol (Phase 18)
+        if config.target_profile == 'ghost_mesh':
+            logger.info("[LatentCloak] Dispatching to Ghost-Mesh Protocol...")
+            result_pil, _ = self.protect_ghost_mesh(
+                image_path, 
+                strength=config.strength, 
+                grid_size=24,
+                num_steps=config.optimization_steps if config.optimization_steps > 0 else 60,
+                use_jnd=True,
+                tzone_anchoring=0.8,
+                warp_noise_balance=0.5
+            )
+            return result_pil
+        
+        # Dispatch to Liquid Warp (Phase 17)
+        if config.target_profile == 'liquid_warp':
+            return self.protect_liquid_warp(image_path, config.strength)
+
         original_pil = Image.open(image_path).convert("RGB")
         crop_pil, bbox, face_mask_np = self.detect_and_crop(original_pil)
         if not crop_pil:

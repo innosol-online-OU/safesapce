@@ -55,7 +55,12 @@ class CloakEngine:
                      optimization_steps: int = 100, use_dwt_mamba: bool = False,
                      use_neural_stego: bool = False, hidden_command: str = "",
                      max_retries: int = 3, background_intensity: float = 1.0,
-                     is_liquid_v2: bool = False, liquid_grid_size: int = 16, liquid_asymmetry: float = 0.05
+                     is_liquid_v2: bool = False, liquid_grid_size: int = 16, liquid_asymmetry: float = 0.05,
+                     # Ghost-Mesh Params
+                     ghost_mesh_grid: Optional[int] = None, ghost_mesh_balance: Optional[float] = None,
+                     ghost_mesh_anchoring: Optional[float] = None, ghost_mesh_tv: Optional[float] = None,
+                     ghost_mesh_jnd: Optional[bool] = None, ghost_mesh_noise: Optional[float] = None,
+                     ghost_mesh_warp: Optional[float] = None
                      ) -> Tuple[bool, str, Dict]:
         """
         Applies Project Invisible (Latent Diffusion Defense).
@@ -155,14 +160,22 @@ class CloakEngine:
                     l_limit = st.session_state.get('liquid_limit', 0.004)
                     l_blur = st.session_state.get('liquid_blur', 15)
                     # Ghost-Mesh Params (Phase 18)
-                    gm_grid = st.session_state.get('ghost_mesh_grid', 24)
-                    gm_balance = st.session_state.get('ghost_mesh_balance', 0.5)
-                    gm_anchoring = st.session_state.get('ghost_mesh_anchoring', 0.8)
-                    gm_tv = st.session_state.get('ghost_mesh_tv', 50)
-                    gm_jnd = st.session_state.get('ghost_mesh_jnd', True)
-                    # Granular Controls
-                    gm_noise = st.session_state.get('ghost_mesh_noise', None)
-                    gm_warp = st.session_state.get('ghost_mesh_warp', None)
+                    # Priority: Function Args > Session State > Defaults
+                    def get_param(arg_val, key, default):
+                        if arg_val is not None: return arg_val
+                        try:
+                            import streamlit as st
+                            return st.session_state.get(key, default)
+                        except:
+                            return default
+
+                    gm_grid = get_param(ghost_mesh_grid, 'ghost_mesh_grid', 24)
+                    gm_balance = get_param(ghost_mesh_balance, 'ghost_mesh_balance', 0.5)
+                    gm_anchoring = get_param(ghost_mesh_anchoring, 'ghost_mesh_anchoring', 0.8)
+                    gm_tv = get_param(ghost_mesh_tv, 'ghost_mesh_tv', 50)
+                    gm_jnd = get_param(ghost_mesh_jnd, 'ghost_mesh_jnd', True)
+                    gm_noise = get_param(ghost_mesh_noise, 'ghost_mesh_noise', None)
+                    gm_warp = get_param(ghost_mesh_warp, 'ghost_mesh_warp', None)
                 except Exception:
                     # Fallback for CLI/API usage
                     p_strength = 50
@@ -174,13 +187,13 @@ class CloakEngine:
                     l_steps = 100
                     l_limit = 0.004
                     l_blur = 15
-                    gm_grid = 24
-                    gm_balance = 0.5
-                    gm_anchoring = 0.8
-                    gm_tv = 50
-                    gm_jnd = True
-                    gm_noise = None
-                    gm_warp = None
+                    gm_grid = ghost_mesh_grid if ghost_mesh_grid is not None else 24
+                    gm_balance = ghost_mesh_balance if ghost_mesh_balance is not None else 0.5
+                    gm_anchoring = ghost_mesh_anchoring if ghost_mesh_anchoring is not None else 0.8
+                    gm_tv = ghost_mesh_tv if ghost_mesh_tv is not None else 50
+                    gm_jnd = ghost_mesh_jnd if ghost_mesh_jnd is not None else True
+                    gm_noise = ghost_mesh_noise
+                    gm_warp = ghost_mesh_warp
                 
                 # Determine loop count
                 # V2: max_retries = Total Runs (Best of N)

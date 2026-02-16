@@ -27,3 +27,4 @@ qwen_vl_utils
 # Phase 2: Frontier Protection
 PyWavelets  # For DWT-Mamba wavelet-domain optimization
 ultralytics # For Chimera Mask (YOLO Seg)
+lightning-sdk
