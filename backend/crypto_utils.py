@@ -29,7 +29,9 @@ def get_fernet_key(secret_key: str) -> bytes:
 def get_fernet(secret_key: str = None) -> Fernet:
     """Get a Fernet instance using SECRET_KEY from env or parameter."""
     if secret_key is None:
-        secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
+        secret_key = os.getenv("SECRET_KEY")
+        if not secret_key:
+            raise RuntimeError("SECRET_KEY environment variable is not set")
     key = get_fernet_key(secret_key)
     return Fernet(key)
 
