@@ -25,8 +25,13 @@ app = FastAPI(title="SafeSpace API", version="1.0.0")
 
 # Security Config
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin") # Default for dev only
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not ADMIN_PASSWORD:
+    raise RuntimeError("ADMIN_PASSWORD environment variable is not set")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is not set")
 
 # CORS
 origins = [
