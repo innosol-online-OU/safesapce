@@ -9,8 +9,8 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-# Salt for key derivation (static, but could be made dynamic per-deployment)
-SALT = b'safespace_v2_salt_2026'
+# Salt for key derivation (fetched from env for security)
+SALT = os.getenv('CRYPTO_SALT', 'safespace_v2_salt_2026').encode()
 
 def get_fernet_key(secret_key: str) -> bytes:
     """
