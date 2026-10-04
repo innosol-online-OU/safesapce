@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import random
+from collections import defaultdict
 from typing import List, Tuple, Dict
 from dataclasses import dataclass
 
@@ -422,10 +423,8 @@ class SelectiveEnsemble:
             selected = [self.model_pool[i] for i in indices]
         else:
             # Low diversity: ensure architecture variety first
-            by_type = {}
+            by_type = defaultdict(list)
             for m in self.model_pool:
-                if m.model_type not in by_type:
-                    by_type[m.model_type] = []
                 by_type[m.model_type].append(m)
             
             selected = []
