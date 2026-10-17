@@ -125,9 +125,13 @@ class LightningClient:
             try:
                 with zipfile.ZipFile(payload_zip, "w", zipfile.ZIP_DEFLATED) as zf:
                     for root, dirs, files in os.walk("invisible_core"):
+                        # Skip cache directories by removing from recursion list
+                        if "__pycache__" in dirs:
+                            dirs.remove("__pycache__")
+
                         for file in files:
                             # Skip cache files
-                            if "__pycache__" in root or file.endswith(".pyc"):
+                            if file.endswith(".pyc"):
                                 continue
                             file_path = os.path.join(root, file)
                             zf.write(file_path, file_path)
