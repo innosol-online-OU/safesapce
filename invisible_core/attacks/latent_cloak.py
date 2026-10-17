@@ -147,7 +147,14 @@ class LatentCloak:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.lite_mode = lite_mode
         self.model_id = model_id
-        
+        self._init_resources()
+
+    @property
+    def target_dtype(self):
+        """Unified precision selection (BFloat16 for CUDA, Float32 for CPU)."""
+        return torch.bfloat16 if self.device == 'cuda' else torch.float32
+
+    def _init_resources(self):
         # Resources (initialized lazily)
         self.face_analysis = None
         self.siglip = None
@@ -157,10 +164,9 @@ class LatentCloak:
         self.detectors_loaded = False
         self.models_loaded = False
         
-        if lite_mode:
+        if self.lite_mode:
             logger.info("[LatentCloak] Lite Mode: Ready.")
             self.models_loaded = True
-            return
         
     def _load_detectors(self):
         """Phase 15.1: Lazy load only the lightweight face detector."""
@@ -289,7 +295,7 @@ class LatentCloak:
         # Encode to Latent Space
         img_tensor = torch.tensor(np.array(image)).float().permute(2,0,1) / 255.0
         img_tensor = 2.0 * img_tensor - 1.0
-        img_tensor = img_tensor.unsqueeze(0).to(self.device, dtype=torch.bfloat16 if self.device == 'cuda' else torch.float32)
+        img_tensor = img_tensor.unsqueeze(0).to(self.device, dtype=self.target_dtype)
         with torch.no_grad():
             latents = self.pipe.vae.encode(img_tensor).latent_dist.sample()
         return latents * 0.18215
@@ -343,7 +349,7 @@ class LatentCloak:
         
         logger.info(f"[LatentCloak] Dynamic Params: epsilon={epsilon:.4f}, w_clip={w_clip:.1f}, w_lpips={w_lpips:.2f}")
         
-        target_dtype = torch.bfloat16 if self.device == 'cuda' else torch.float32
+        target_dtype = self.target_dtype
         
         # Prepare Face Mask Tensor for Gradient Boost
         # Mask is 0-1. 1 = Face.
@@ -401,18 +407,15 @@ class LatentCloak:
             orig_clip_embed = orig_clip_embed / orig_clip_embed.norm(dim=-1, keepdim=True)
             
             # For LPIPS reference
-            orig_tensor_lpips = (torch.tensor(np.array(crop_pil)).permute(2,0,1).to(self.device, dtype=torch.bfloat16 if self.device == 'cuda' else torch.float32)/255.0 * 2 - 1).unsqueeze(0)
+            orig_tensor_lpips = (torch.tensor(np.array(crop_pil)).permute(2,0,1).to(self.device, dtype=self.target_dtype)/255.0 * 2 - 1).unsqueeze(0)
 
         for i in range(steps):
             optimizer.zero_grad()
             
             # Decode to Pixel Space (Differentiable)
-            # Need to scale latents for VAE
-            # Decode to Pixel Space (Differentiable)
-            # Need to scale latents for VAE
-            # FIX: Cast to target_dtype (BFloat16) for VAE, but keep gradients flowing to Float32 latents
-            # Ensure VAE decode happens with correct precision for the model, but gradients flow back to float32 latents
-            decoded_img = self.pipe.vae.decode(adv_latents.to(self.pipe.vae.dtype) / 0.18215).sample
+            # Use target_dtype (BFloat16 on CUDA) for VAE performance,
+            # but maintain gradients in Float32 for latent precision.
+            decoded_img = self.pipe.vae.decode(adv_latents.to(target_dtype) / 0.18215).sample
             
             # decoded_img is [-1, 1].
             
@@ -501,7 +504,7 @@ class LatentCloak:
 
         # Final Decode
         with torch.no_grad():
-            final_tensor = self.pipe.vae.decode(adv_latents.to(self.pipe.vae.dtype) / 0.18215).sample
+            final_tensor = self.pipe.vae.decode(adv_latents.to(target_dtype) / 0.18215).sample
             final_tensor = (final_tensor / 2 + 0.5).clamp(0, 1)
             
         final_np = final_tensor.cpu().float().permute(0, 2, 3, 1).numpy()[0]
@@ -523,7 +526,8 @@ class LatentCloak:
     def _finalize_image(self, original_pil, adv_latents, bbox, config):
         # 3. Final decode
         with torch.no_grad():
-            final_tensor = self.pipe.vae.decode(adv_latents.to(self.pipe.vae.dtype) / 0.18215).sample
+            target_dtype = self.target_dtype
+            final_tensor = self.pipe.vae.decode(adv_latents.to(target_dtype) / 0.18215).sample
             final_tensor = (final_tensor / 2 + 0.5).clamp(0, 1)
         
         final_np = final_tensor.cpu().float().permute(0, 2, 3, 1).numpy()[0]
